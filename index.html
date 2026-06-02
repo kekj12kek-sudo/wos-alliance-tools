@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T12 座標取得</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#111;color:#fff;font-family:Arial,"Yu Gothic",Meiryo,sans-serif}
+header{position:sticky;top:0;z-index:50;background:#202020;border-bottom:1px solid #444;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button,select,input{font-size:14px;padding:8px}
+button{cursor:pointer}
+.main{display:grid;grid-template-columns:minmax(360px,1fr) 420px;gap:10px;padding:10px}
+.stage{background:#000;border:1px solid #444;overflow:auto}
+#wrap{position:relative;display:inline-block;line-height:0}
+#treeImage{display:block;max-width:none;width:900px;height:auto}
+.marker{position:absolute;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;background:rgba(255,0,0,.42);border:3px solid #fff;color:#fff;font-size:10px;font-weight:bold;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;cursor:move;user-select:none;touch-action:none;z-index:10}
+.marker.selected{background:rgba(0,170,255,.5);border-color:#ffe066}
+.side{background:#181818;border:1px solid #444;padding:10px}
+textarea{width:100%;height:520px;background:#050505;color:#00ff88;border:1px solid #555;padding:10px;font-family:Consolas,monospace;font-size:12px}
+.small{color:#ccc;font-size:12px;line-height:1.5}
+@media(max-width:900px){.main{grid-template-columns:1fr}.side{order:-1}#treeImage{width:1000px}}
+</style>
+</head>
+<body>
+<header>
+  <strong>T12 座標取得</strong>
+  <label>兵種
+    <select id="troop">
+      <option value="shield">盾</option>
+      <option value="bow">弓</option>
+      <option value="spear">槍</option>
+    </select>
+  </label>
+  <label>選択マーカー
+    <select id="nodeSelect"></select>
+  </label>
+  <label>サイズ
+    <input id="sizeInput" type="range" min="20" max="160" value="70">
+    <span id="sizeText">70</span>px
+  </label>
+  <label>画像幅
+    <input id="imgWidth" type="range" min="500" max="1400" value="900">
+    <span id="imgWidthText">900</span>px
+  </label>
+  <button id="copyBtn">コピー</button>
+  <button id="resetBtn">この兵種を初期化</button>
+</header>
+
+<div class="main">
+  <section class="stage">
+    <div id="wrap">
+      <img id="treeImage" src="S__123273220_0.jpg" alt="T12 tree">
+    </div>
+  </section>
+  <aside class="side">
+    <div class="small">
+      盾→15マーカー配置→コピー。<br>
+      マーカーはドラッグで移動。選択中マーカーだけサイズ変更。<br>
+      x/yは画像全体に対する％座標。
+    </div>
+    <h3>座標JSON</h3>
+    <textarea id="output" readonly></textarea>
+  </aside>
+</div>
+
+<script>
+const imageMap = {
+  shield: "S__123273220_0.jpg",
+  bow: "S__123273221_0.jpg",
+  spear: "S__123273222_0.jpg"
+};
+
+const nodeNames = {
+  unlock:"T12解放",
+  ability1_atk:"能力Ⅰ 攻撃",
+  ability1_def:"能力Ⅰ 防御",
+  ability1_leth:"能力Ⅰ 殺傷",
+  ability1_hp:"能力Ⅰ HP",
+  skill:"スキル",
+  ability2_atk:"能力Ⅱ 攻撃",
+  ability2_def:"能力Ⅱ 防御",
+  ability2_leth:"能力Ⅱ 殺傷",
+  ability2_hp:"能力Ⅱ HP",
+  capacity:"容量",
+  ability3_atk:"能力Ⅲ 攻撃",
+  ability3_def:"能力Ⅲ 防御",
+  ability3_leth:"能力Ⅲ 殺傷",
+  ability3_hp:"能力Ⅲ HP"
+};
+
+const nodes = Object.keys(nodeNames);
+const defaults = {
+  unlock:{x:50,y:8,size:70},
+  ability1_atk:{x:18,y:25,size:70},
+  ability1_def:{x:39,y:25,size:70},
+  ability1_leth:{x:60,y:25,size:70},
+  ability1_hp:{x:81,y:25,size:70},
+  skill:{x:50,y:41,size:70},
+  ability2_atk:{x:18,y:57,size:70},
+  ability2_def:{x:39,y:57,size:70},
+  ability2_leth:{x:60,y:57,size:70},
+  ability2_hp:{x:81,y:57,size:70},
+  capacity:{x:50,y:72,size:70},
+  ability3_atk:{x:18,y:88,size:70},
+  ability3_def:{x:39,y:88,size:70},
+  ability3_leth:{x:60,y:88,size:70},
+  ability3_hp:{x:81,y:88,size:70}
+};
+
+let troop = "shield";
+let selectedNode = "unlock";
+let data = {
+  shield: clone(defaults),
+  bow: clone(defaults),
+  spear: clone(defaults)
+};
+
+const wrap = document.getElementById("wrap");
+const img = document.getElementById("treeImage");
+const output = document.getElementById("output");
+const troopSelect = document.getElementById("troop");
+const nodeSelect = document.getElementById("nodeSelect");
+const sizeInput = document.getElementById("sizeInput");
+const sizeText = document.getElementById("sizeText");
+const imgWidth = document.getElementById("imgWidth");
+const imgWidthText = document.getElementById("imgWidthText");
+
+function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+function initSelect(){
+  nodes.forEach(k=>{
+    const opt=document.createElement("option");
+    opt.value=k;
+    opt.textContent=k+" / "+nodeNames[k];
+    nodeSelect.appendChild(opt);
+  });
+}
+
+function buildMarkers(){
+  nodes.forEach(k=>{
+    const m=document.createElement("div");
+    m.className="marker";
+    m.dataset.key=k;
+    m.innerHTML=nodeNames[k].replace(" ","<br>");
+    wrap.appendChild(m);
+    enableDrag(m);
+  });
+}
+
+function render(){
+  img.src = imageMap[troop];
+  document.querySelectorAll(".marker").forEach(m=>{
+    const k=m.dataset.key;
+    const p=data[troop][k];
+    m.style.left=p.x+"%";
+    m.style.top=p.y+"%";
+    m.style.width=p.size+"px";
+    m.style.height=p.size+"px";
+    m.classList.toggle("selected", k===selectedNode);
+  });
+  sizeInput.value=data[troop][selectedNode].size;
+  sizeText.textContent=data[troop][selectedNode].size;
+  nodeSelect.value=selectedNode;
+  output.value=JSON.stringify({[troop]:data[troop]}, null, 2);
+}
+
+function enableDrag(m){
+  let dragging=false;
+  m.addEventListener("pointerdown", e=>{
+    dragging=true;
+    selectedNode=m.dataset.key;
+    m.setPointerCapture(e.pointerId);
+    render();
+    e.preventDefault();
+  });
+  m.addEventListener("pointermove", e=>{
+    if(!dragging)return;
+    const r=wrap.getBoundingClientRect();
+    const x=((e.clientX-r.left)/r.width)*100;
+    const y=((e.clientY-r.top)/r.height)*100;
+    data[troop][selectedNode].x=round(clamp(x,0,100));
+    data[troop][selectedNode].y=round(clamp(y,0,100));
+    render();
+  });
+  m.addEventListener("pointerup", ()=>dragging=false);
+  m.addEventListener("pointercancel", ()=>dragging=false);
+}
+
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function round(v){return Math.round(v*100)/100;}
+
+troopSelect.addEventListener("change", e=>{
+  troop=e.target.value;
+  selectedNode="unlock";
+  render();
+});
+
+nodeSelect.addEventListener("change", e=>{
+  selectedNode=e.target.value;
+  render();
+});
+
+sizeInput.addEventListener("input", e=>{
+  const v=Number(e.target.value);
+  data[troop][selectedNode].size=v;
+  render();
+});
+
+imgWidth.addEventListener("input", e=>{
+  img.style.width=e.target.value+"px";
+  imgWidthText.textContent=e.target.value;
+});
+
+document.getElementById("copyBtn").addEventListener("click", async()=>{
+  output.value=JSON.stringify({[troop]:data[troop]}, null, 2);
+  await navigator.clipboard.writeText(output.value);
+  alert("コピー完了");
+});
+
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if(!confirm("この兵種の座標を初期化しますか？"))return;
+  data[troop]=clone(defaults);
+  render();
+});
+
+initSelect();
+buildMarkers();
+render();
+</script>
+</body>
+</html>
