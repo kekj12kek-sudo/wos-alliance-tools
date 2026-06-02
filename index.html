@@ -17,7 +17,7 @@ button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#1
 .marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(37,99,235,.20);border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;font-size:8px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;cursor:pointer;z-index:5;padding:0}
 .marker:hover,.marker.selected{background:rgba(245,158,11,.42);border-color:#fde68a}
 .side{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;margin-top:12px}
-.node-editor{display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:100;background:#0f172a;border:2px solid #22c55e;border-radius:16px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);width:auto;max-height:45vh;overflow:auto}
+.node-editor{display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:100;background:#0f172a;border:2px solid #f59e0b;border-radius:16px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);width:auto;max-height:45vh;overflow:auto}
 .node-editor.open{display:block}
 .node-editor h3{margin:0 0 10px}
 .editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
@@ -57,8 +57,8 @@ h2,h3{margin-top:0}
   position:absolute;
   transform:translate(-50%,-50%);
   border-radius:12px;
-  border:2px solid #22c55e;
-  background:rgba(22,101,52,.86);
+  border:2px solid #f59e0b;
+  background:rgba(15,23,42,.88);
   color:#fff;
   font-weight:900;
   font-size:12px;
@@ -73,10 +73,41 @@ h2,h3{margin-top:0}
   touch-action:none;
   box-shadow:0 4px 12px rgba(0,0,0,.45);
 }
-.quick-btn.selected{background:rgba(245,158,11,.88);border-color:#fde68a;
+.quick-btn.selected{
   background:rgba(245,158,11,.82);
   border-color:#fde68a;
 }
+.adjust-panel{
+  background:#0b1220;
+  border:1px solid #334155;
+  border-radius:12px;
+  padding:12px;
+  margin:12px 0;
+}
+.adjust-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.adjust-grid label{
+  color:#cbd5e1;
+  font-size:13px;
+}
+.adjust-grid input,.adjust-grid select{
+  width:100%;
+}
+.coord-output{
+  width:100%;
+  min-height:120px;
+  background:#020617;
+  color:#86efac;
+  border:1px solid #334155;
+  border-radius:10px;
+  padding:8px;
+  font-size:12px;
+  font-family:Consolas,monospace;
+}
+
 </style>
 </head>
 <body>
@@ -517,8 +548,23 @@ function syncQuickControls(){}
 
 function updateQuickJson(){}
 
+
+function quickMap(key){
+  return {
+    ability1_max:["ability1_atk","ability1_def","ability1_leth","ability1_hp"],
+    skill_max:["skill"],
+    ability2_max:["ability2_atk","ability2_def","ability2_leth","ability2_hp"],
+    capacity_max:["capacity"]
+  }[key] || [];
+}
+
+function isQuickApplied(key){
+  return quickMap(key).every(n => state[troop][n].current >= maxLv[n]);
+}
+
 function renderQuickButtons(){
   document.querySelectorAll(".quick-btn").forEach(x=>x.remove());
+
   Object.keys(quickButtonName).forEach(k=>{
     const d = quickButtonData[troop][k];
     const b = document.createElement("button");
@@ -530,10 +576,9 @@ function renderQuickButtons(){
     b.style.top = d.y + "%";
     b.style.width = d.w + "px";
     b.style.height = d.h + "px";
-    b.addEventListener("click", (e)=>{
+    b.addEventListener("click", e=>{
       e.stopPropagation();
       applyQuickAction(k);
-      renderQuickButtons();
     });
     wrap.appendChild(b);
   });
@@ -541,33 +586,17 @@ function renderQuickButtons(){
 
 function enableQuickDrag(btn){}
 
-function isQuickApplied(key){
-  const map = {
-    ability1_max:["ability1_atk","ability1_def","ability1_leth","ability1_hp"],
-    skill_max:["skill"],
-    ability2_max:["ability2_atk","ability2_def","ability2_leth","ability2_hp"],
-    capacity_max:["capacity"]
-  };
-  return (map[key] || []).every(n => state[troop][n].current >= maxLv[n]);
-}
-
 function applyQuickAction(key){
-  const map = {
-    ability1_max:["ability1_atk","ability1_def","ability1_leth","ability1_hp"],
-    skill_max:["skill"],
-    ability2_max:["ability2_atk","ability2_def","ability2_leth","ability2_hp"],
-    capacity_max:["capacity"]
-  };
-  const keys = map[key] || [];
+  const keys = quickMap(key);
   const already = isQuickApplied(key);
-
   keys.forEach(n=>{
     state[troop][n].current = already ? 0 : maxLv[n];
   });
-
   normalizePrereqFor("current");
   renderTotalResult();
+  renderQuickButtons();
 }
+
 
 function makeOptions(max){
   let s="";
@@ -706,3 +735,16 @@ document.getElementById("treeImage").addEventListener("load", renderMarkers);
 </script>
 </body>
 </html>
+
+<!-- fixed_v2 marker restore -->
+<style>
+.quick-btn{
+  background:rgba(22,101,52,.86) !important;
+  border-color:#22c55e !important;
+  cursor:pointer !important;
+}
+.quick-btn.selected{
+  background:rgba(245,158,11,.88) !important;
+  border-color:#fde68a !important;
+}
+</style>
