@@ -29,6 +29,12 @@ h2,h3{margin-top:0}
 .info{color:#cbd5e1;line-height:1.6;font-size:14px}
 .goal-result{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:12px}
 .goal-result h3{margin:0 0 8px;font-size:16px}
+.tree-troops{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.total-box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:12px}
+.result-table{width:100%;border-collapse:collapse;margin-top:8px}
+.result-table th,.result-table td{border-bottom:1px solid #334155;padding:7px;text-align:right}
+.result-table th:first-child,.result-table td:first-child{text-align:left}
+.warn{color:#fbbf24;font-size:13px;line-height:1.5;margin-top:8px}
 .count-tabs{display:flex;gap:8px;margin:8px 0 12px}
 .count-tab{padding:8px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:800;cursor:pointer}
 .count-tab.active{background:#166534;border-color:#22c55e}
@@ -50,10 +56,6 @@ h2,h3{margin-top:0}
 <body>
 <header>
 <strong>T12研究ページ / 固定マーカー版</strong>
-<button class="troop active" data-troop="shield">盾</button>
-<button class="troop" data-troop="bow">弓</button>
-<button class="troop" data-troop="spear">槍</button>
-<span style="width:1px;height:28px;background:#475569;display:inline-block"></span>
 <button class="goal active" data-goal="unlock">T12解放まで</button>
 <button class="goal" data-goal="skill">スキル解放まで</button>
 <button class="goal" data-goal="max">カンストまで</button>
@@ -61,6 +63,12 @@ h2,h3{margin-top:0}
 
 <div class="main">
 <section>
+  <div class="total-box">
+    <h3>全兵種 合算不足分</h3>
+    <div class="info">盾・弓・槍それぞれの現在Lvと目標Lvから、不足素材を合算します。</div>
+    <div id="totalResult"></div>
+  </div>
+
   <div class="goal-result">
     <h3>大枠目標の必要素材</h3>
     <div class="info">基本は1兵種分です。タブで2兵種・3兵種の合計へ切替できます。</div>
@@ -70,6 +78,11 @@ h2,h3{margin-top:0}
       <button class="count-tab" data-count="3">3兵種</button>
     </div>
     <div id="goalResult"></div>
+  </div>
+  <div class="tree-troops">
+    <button class="troop active" data-troop="shield">盾</button>
+    <button class="troop" data-troop="bow">弓</button>
+    <button class="troop" data-troop="spear">槍</button>
   </div>
   <div class="stage">
   <div id="treeWrap">
@@ -82,6 +95,7 @@ h2,h3{margin-top:0}
   <h2 id="title">盾の研究設定</h2>
   <p class="info">スキルツリー上のマーカーをタップすると、その項目だけ設定できます。全項目の常時表示はしません。</p>
   <div id="goalSummary" class="info" style="background:#111827;border:1px solid #334155;border-radius:10px;padding:10px;margin-bottom:10px"></div>
+  <div class="warn">前提条件：能力ⅠがMAXでないとスキルへ進めません。能力ⅡがMAXでないと容量MAXへ進めません。容量MAXでないと能力Ⅲへ進めません。</div>
 
   <div class="info" style="font-weight:900;margin-bottom:4px">現在の研究状況を簡単設定</div>
   <div class="preset-box">
@@ -127,11 +141,6 @@ const GOAL_COSTS = {
 };
 let resultTroopCount = 1;
 
-function fmt(n){
-  if(n >= 100000000) return (n/100000000).toFixed(2).replace(/\.00$/,"") + "億";
-  if(n >= 1000000) return (n/1000000).toFixed(2).replace(/\.00$/,"") + "M";
-  return Math.round(n).toLocaleString("ja-JP");
-}
 
 function renderGoalResult(){
   const c = GOAL_COSTS[goal];
@@ -142,6 +151,127 @@ function renderGoalResult(){
       <div class="material-card"><div class="label">火晶微粒子</div><div class="value">${fmt(c.particle * count)}</div></div>
       <div class="material-card"><div class="label">鋼材</div><div class="value">${fmt(c.steel * count)}</div></div>
     </div>
+  `;
+}
+
+
+const COSTS = {
+  unlock: { refined:440, particle:3080, steel:1620000 },
+  ability1_each: { refined:77, particle:545, steel:510750 },
+  skill: { refined:150, particle:975, steel:600000 },
+  ability2_each: { refined:360, particle:5610, steel:1350000 },
+  capacity: { refined:117, particle:1829, steel:611250 },
+  ability3_each: { refined:360, particle:9360, steel:1875000 }
+};
+
+function costForNode(key, lv){
+  lv = Number(lv) || 0;
+  if(lv <= 0) return {refined:0, particle:0, steel:0};
+  if(key === "unlock"){
+    return scaleCost(COSTS.unlock, lv / 1);
+  }
+  if(key.startsWith("ability1_")){
+    return scaleCost(COSTS.ability1_each, lv / 20);
+  }
+  if(key === "skill"){
+    return scaleCost(COSTS.skill, lv / 3);
+  }
+  if(key.startsWith("ability2_")){
+    return scaleCost(COSTS.ability2_each, lv / 50);
+  }
+  if(key === "capacity"){
+    return scaleCost(COSTS.capacity, lv / 15);
+  }
+  if(key.startsWith("ability3_")){
+    return scaleCost(COSTS.ability3_each, lv / 50);
+  }
+  return {refined:0, particle:0, steel:0};
+}
+
+function scaleCost(c, rate){
+  return {
+    refined: c.refined * rate,
+    particle: c.particle * rate,
+    steel: c.steel * rate
+  };
+}
+
+function addCost(a,b){
+  a.refined += b.refined || 0;
+  a.particle += b.particle || 0;
+  a.steel += b.steel || 0;
+  return a;
+}
+
+function fmt(n){
+  if(n >= 100000000) return (n/100000000).toFixed(2).replace(/\.00$/,"") + "億";
+  if(n >= 1000000) return (n/1000000).toFixed(2).replace(/\.00$/,"") + "M";
+  return Math.ceil(n).toLocaleString("ja-JP");
+}
+
+function normalizePrereqFor(type){
+  const s = state[troop];
+
+  // スキル以上 → 解放 + 能力Ⅰ4種MAX
+  if(s.skill[type] > 0 || hasAny(type, ["ability2_atk","ability2_def","ability2_leth","ability2_hp","capacity","ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
+    s.unlock[type] = Math.max(s.unlock[type], 1);
+    ["ability1_atk","ability1_def","ability1_leth","ability1_hp"].forEach(k => s[k][type] = Math.max(s[k][type], 20));
+  }
+
+  // 能力Ⅱ以上 → スキルMAX
+  if(hasAny(type, ["ability2_atk","ability2_def","ability2_leth","ability2_hp","capacity","ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
+    s.skill[type] = Math.max(s.skill[type], 3);
+  }
+
+  // 容量以上 → 能力Ⅱ4種MAX
+  if(s.capacity[type] > 0 || hasAny(type, ["ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
+    ["ability2_atk","ability2_def","ability2_leth","ability2_hp"].forEach(k => s[k][type] = Math.max(s[k][type], 50));
+  }
+
+  // 能力Ⅲ → 容量MAX
+  if(hasAny(type, ["ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
+    s.capacity[type] = Math.max(s.capacity[type], 15);
+  }
+}
+
+function hasAny(type, keys){
+  return keys.some(k => state[troop][k][type] > 0);
+}
+
+function shortageForTroop(t){
+  const total = {refined:0, particle:0, steel:0};
+  Object.keys(nodeName).forEach(k=>{
+    const cur = state[t][k].current || 0;
+    const tar = state[t][k].target || 0;
+    const diff = Math.max(0, tar - cur);
+    const c1 = costForNode(k, cur);
+    const c2 = costForNode(k, cur + diff);
+    addCost(total, {
+      refined: c2.refined - c1.refined,
+      particle: c2.particle - c1.particle,
+      steel: c2.steel - c1.steel
+    });
+  });
+  return total;
+}
+
+function renderTotalResult(){
+  const rows = ["shield","bow","spear"].map(t=>{
+    const r = shortageForTroop(t);
+    return `<tr><td>${troopName[t]}</td><td>${fmt(r.refined)}</td><td>${fmt(r.particle)}</td><td>${fmt(r.steel)}</td></tr>`;
+  }).join("");
+
+  const total = {refined:0, particle:0, steel:0};
+  ["shield","bow","spear"].forEach(t=>addCost(total, shortageForTroop(t)));
+
+  document.getElementById("totalResult").innerHTML = `
+    <table class="result-table">
+      <thead><tr><th>対象</th><th>精錬火晶</th><th>火晶微粒子</th><th>鋼材</th></tr></thead>
+      <tbody>
+        ${rows}
+        <tr style="font-weight:900;color:#86efac"><td>合計</td><td>${fmt(total.refined)}</td><td>${fmt(total.particle)}</td><td>${fmt(total.steel)}</td></tr>
+      </tbody>
+    </table>
   `;
 }
 
@@ -228,6 +358,7 @@ function applyGoalToTroop(){
   Object.keys(preset).forEach(k => {
     state[troop][k].target = preset[k];
   });
+  normalizePrereqFor("target");
 }
 
 function applyPresetTo(type, presetName){
@@ -235,6 +366,7 @@ function applyPresetTo(type, presetName){
   Object.keys(preset).forEach(k => {
     state[troop][k][type] = preset[k];
   });
+  normalizePrereqFor(type);
   renderTable();
   focusRow(selected);
 }
@@ -283,6 +415,7 @@ function renderMarkers(){
 }
 
 function renderTable(){
+  renderTotalResult();
   document.getElementById("title").textContent = troopName[troop] + "の研究設定";
   document.getElementById("goalSummary").innerHTML =
     "選択中の大枠目標：<b>" + goalLabel[goal] + "</b><br>" +
@@ -311,11 +444,23 @@ function openEditor(k){
   const tar = document.getElementById("editorTarget");
   cur.innerHTML = makeEditorOptions(maxLv[k], state[troop][k].current);
   tar.innerHTML = makeEditorOptions(maxLv[k], state[troop][k].target);
-  cur.onchange = e => { state[troop][k].current = Number(e.target.value); };
-  tar.onchange = e => { state[troop][k].target = Number(e.target.value); };
+  cur.onchange = e => {
+    state[troop][k].current = Number(e.target.value);
+    normalizePrereqFor("current");
+    openEditor(k);
+    renderTotalResult();
+  };
+  tar.onchange = e => {
+    state[troop][k].target = Number(e.target.value);
+    normalizePrereqFor("target");
+    openEditor(k);
+    renderTotalResult();
+  };
   document.getElementById("editorMaxCurrent").onclick = () => {
     state[troop][k].current = maxLv[k];
+    normalizePrereqFor("current");
     openEditor(k);
+    renderTotalResult();
   };
   editor.classList.add("open");
 }
@@ -339,6 +484,7 @@ document.querySelectorAll(".goal").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".goal").forEach(x=>x.classList.toggle("active", x.dataset.goal===goal));
   applyGoalToTroop();
   renderGoalResult();
+  renderTotalResult();
   renderTable();
   focusRow(selected);
 }));
@@ -355,6 +501,7 @@ setupPresetButtons();
 
 applyGoalToTroop();
 renderGoalResult();
+renderTotalResult();
 renderTable();
 renderMarkers();
 </script>
