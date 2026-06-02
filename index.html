@@ -137,17 +137,12 @@ h2,h3{margin-top:0}
 
   <div class="adjust-panel">
     <h3>追加ボタン位置調整</h3>
-    <div class="info">新規追加の横長ボタン4つだけ調整します。既存の丸マーカーは変更しません。</div>
+    <div class="info">新規追加の横長ボタン4つだけ位置調整します。サイズは確定値で固定、既存の丸マーカーは変更しません。</div>
     <div class="adjust-grid">
       <label>調整するボタン
         <select id="quickSelect"></select>
       </label>
-      <label>横幅
-        <input id="quickWidth" type="range" min="80" max="260" value="150">
-      </label>
-      <label>高さ
-        <input id="quickHeight" type="range" min="28" max="80" value="42">
-      </label>
+      <div class="info">サイズは確定値で固定。ドラッグで位置だけ微調整できます。</div>
       <button id="copyQuickJson">追加ボタン座標をコピー</button>
       <textarea id="quickJson" class="coord-output" readonly></textarea>
     </div>
@@ -475,23 +470,83 @@ const quickButtonName = {
 };
 
 const quickButtonData = {
-  shield: {
-    ability1_max:{x:50,y:32,w:150,h:42},
-    skill_max:{x:50,y:49,w:150,h:42},
-    ability2_max:{x:50,y:67,w:150,h:42},
-    capacity_max:{x:50,y:84,w:150,h:42}
+  "shield": {
+    "ability1_max": {
+      "x": 50,
+      "y": 32,
+      "w": 82,
+      "h": 35
+    },
+    "skill_max": {
+      "x": 50,
+      "y": 49,
+      "w": 80,
+      "h": 36
+    },
+    "ability2_max": {
+      "x": 50,
+      "y": 67,
+      "w": 80,
+      "h": 35
+    },
+    "capacity_max": {
+      "x": 50,
+      "y": 84,
+      "w": 80,
+      "h": 32
+    }
   },
-  bow: {
-    ability1_max:{x:50,y:33,w:150,h:42},
-    skill_max:{x:50,y:50,w:150,h:42},
-    ability2_max:{x:50,y:67,w:150,h:42},
-    capacity_max:{x:50,y:84,w:150,h:42}
+  "bow": {
+    "ability1_max": {
+      "x": 50,
+      "y": 33,
+      "w": 80,
+      "h": 33
+    },
+    "skill_max": {
+      "x": 50,
+      "y": 50,
+      "w": 80,
+      "h": 33
+    },
+    "ability2_max": {
+      "x": 50,
+      "y": 67,
+      "w": 80,
+      "h": 35
+    },
+    "capacity_max": {
+      "x": 50,
+      "y": 84,
+      "w": 80,
+      "h": 35
+    }
   },
-  spear: {
-    ability1_max:{x:50,y:34,w:150,h:42},
-    skill_max:{x:50,y:52,w:150,h:42},
-    ability2_max:{x:50,y:69,w:150,h:42},
-    capacity_max:{x:50,y:85,w:150,h:42}
+  "spear": {
+    "ability1_max": {
+      "x": 50,
+      "y": 34,
+      "w": 80,
+      "h": 34
+    },
+    "skill_max": {
+      "x": 50,
+      "y": 52,
+      "w": 80,
+      "h": 30
+    },
+    "ability2_max": {
+      "x": 50,
+      "y": 69,
+      "w": 80,
+      "h": 32
+    },
+    "capacity_max": {
+      "x": 50,
+      "y": 85,
+      "w": 80,
+      "h": 30
+    }
   }
 };
 
@@ -510,16 +565,7 @@ function initQuickSelect(){
     syncQuickControls();
   });
 
-  document.getElementById("quickWidth").addEventListener("input", e=>{
-    quickButtonData[troop][selectedQuick].w = Number(e.target.value);
-    renderQuickButtons();
-    updateQuickJson();
-  });
-  document.getElementById("quickHeight").addEventListener("input", e=>{
-    quickButtonData[troop][selectedQuick].h = Number(e.target.value);
-    renderQuickButtons();
-    updateQuickJson();
-  });
+
   document.getElementById("copyQuickJson").addEventListener("click", async()=>{
     updateQuickJson();
     await navigator.clipboard.writeText(document.getElementById("quickJson").value);
@@ -528,11 +574,8 @@ function initQuickSelect(){
 }
 
 function syncQuickControls(){
-  const d = quickButtonData[troop][selectedQuick];
-  const w = document.getElementById("quickWidth");
-  const h = document.getElementById("quickHeight");
-  if(w) w.value = d.w;
-  if(h) h.value = d.h;
+  const sel = document.getElementById("quickSelect");
+  if(sel) sel.value = selectedQuick;
   updateQuickJson();
 }
 
