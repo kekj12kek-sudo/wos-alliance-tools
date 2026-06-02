@@ -7,17 +7,17 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#111827;color:#fff;font-family:Arial,"Yu Gothic",Meiryo,sans-serif}
-header{position:sticky;top:0;z-index:20;background:#182235;border-bottom:1px solid #334155;padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-button,select{padding:9px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:700}
+header{position:sticky;top:0;z-index:20;background:#182235;border-bottom:1px solid #334155;padding:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,select{padding:10px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:700;font-size:14px}
 button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#166534;border-color:#22c55e}
-.main{display:grid;grid-template-columns:minmax(360px,1fr) 420px;gap:12px;padding:12px}
-.stage{background:#0b1220;border:1px solid #334155;border-radius:12px;overflow:auto;padding:8px}
-#treeWrap{position:relative;display:inline-block;line-height:0}
-#treeImage{display:block;width:900px;max-width:none;height:auto}
-.marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(37,99,235,.22);border:3px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;font-size:10px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;cursor:pointer;z-index:5}
+.main{display:block;padding:10px;max-width:720px;margin:0 auto}
+.stage{background:#0b1220;border:1px solid #334155;border-radius:12px;overflow:hidden;padding:6px}
+#treeWrap{position:relative;display:block;line-height:0;width:100%}
+#treeImage{display:block;width:100%;height:auto}
+.marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(37,99,235,.20);border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;font-size:8px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;cursor:pointer;z-index:5;padding:0}
 .marker:hover,.marker.selected{background:rgba(245,158,11,.42);border-color:#fde68a}
-.side{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px}
-.node-editor{display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100;background:#0f172a;border:2px solid #f59e0b;border-radius:16px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.45);width:min(92vw,420px)}
+.side{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;margin-top:12px}
+.node-editor{display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:100;background:#0f172a;border:2px solid #f59e0b;border-radius:16px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);width:auto;max-height:45vh;overflow:auto}
 .node-editor.open{display:block}
 .node-editor h3{margin:0 0 10px}
 .editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
@@ -32,16 +32,16 @@ h2,h3{margin-top:0}
 .tree-troops{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
 .total-box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:12px}
 .result-table{width:100%;border-collapse:collapse;margin-top:8px}
-.result-table th,.result-table td{border-bottom:1px solid #334155;padding:7px;text-align:right}
+.result-table th,.result-table td{border-bottom:1px solid #334155;padding:7px 4px;text-align:right;font-size:12px}
 .result-table th:first-child,.result-table td:first-child{text-align:left}
 .warn{color:#fbbf24;font-size:13px;line-height:1.5;margin-top:8px}
 .count-tabs{display:flex;gap:8px;margin:8px 0 12px}
 .count-tab{padding:8px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:800;cursor:pointer}
 .count-tab.active{background:#166534;border-color:#22c55e}
-.material-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.material-grid{display:grid;grid-template-columns:1fr;gap:8px}
 .material-card{background:#111827;border:1px solid #334155;border-radius:10px;padding:10px}
 .material-card .label{color:#94a3b8;font-size:12px}
-.material-card .value{font-size:20px;font-weight:900;margin-top:4px}
+.material-card .value{font-size:22px;font-weight:900;margin-top:4px}
 @media(max-width:700px){.material-grid{grid-template-columns:1fr}}
 .preset-box{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px}
 .preset-btn{padding:8px 10px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:800;cursor:pointer}
@@ -50,12 +50,12 @@ h2,h3{margin-top:0}
 .level-row.active{background:#1e293b;outline:2px solid #f59e0b;border-radius:10px}
 .level-row label{font-weight:700;font-size:13px}
 .level-row select{width:100%;padding:7px}
-@media(max-width:900px){.main{grid-template-columns:1fr}.side{order:-1}#treeImage{width:1000px}}
+@media(min-width:900px){.main{max-width:760px}.material-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
 <header>
-<strong>T12研究ページ / 固定マーカー版</strong>
+<strong style="width:100%;font-size:16px">T12研究ページ</strong>
 <button class="goal active" data-goal="unlock">T12解放まで</button>
 <button class="goal" data-goal="skill">スキル解放まで</button>
 <button class="goal" data-goal="max">カンストまで</button>
@@ -119,14 +119,15 @@ h2,h3{margin-top:0}
     <div>
       <label>現在Lv</label>
       <select id="editorCurrent"></select>
+      <button id="editorMaxCurrent" style="width:100%;margin-top:8px">カンスト済み</button>
     </div>
     <div>
       <label>目標Lv</label>
       <select id="editorTarget"></select>
+      <button id="editorMaxTarget" style="width:100%;margin-top:8px">Lv MAX</button>
     </div>
   </div>
   <div class="editor-actions">
-    <button id="editorMaxCurrent">現在をMAX</button>
     <button id="editorClose">閉じる</button>
   </div>
 </div>
@@ -400,8 +401,10 @@ function renderMarkers(){
     m.innerHTML = nodeName[k].replace(" ","<br>");
     m.style.left = p.x + "%";
     m.style.top = p.y + "%";
-    m.style.width = p.size + "px";
-    m.style.height = p.size + "px";
+    const scale = document.getElementById("treeImage").clientWidth / 900;
+    const displaySize = Math.max(32, p.size * scale);
+    m.style.width = displaySize + "px";
+    m.style.height = displaySize + "px";
     m.addEventListener("click",()=>{
       selected = k;
       renderMarkers();
@@ -459,6 +462,12 @@ function openEditor(k){
     openEditor(k);
     renderTotalResult();
   };
+  document.getElementById("editorMaxTarget").onclick = () => {
+    state[troop][k].target = maxLv[k];
+    normalizePrereqFor("target");
+    openEditor(k);
+    renderTotalResult();
+  };
   editor.classList.add("open");
 }
 
@@ -497,6 +506,8 @@ renderGoalResult();
 renderTotalResult();
 renderTable();
 renderMarkers();
+window.addEventListener("resize", renderMarkers);
+document.getElementById("treeImage").addEventListener("load", renderMarkers);
 </script>
 </body>
 </html>
