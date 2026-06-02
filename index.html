@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#111827;color:#fff;font-family:Arial,"Yu Gothic",Meiryo,sans-serif}
-header{position:sticky;top:0;z-index:20;background:#182235;border-bottom:1px solid #334155;padding:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+header{position:relative;background:#182235;border-bottom:1px solid #334155;padding:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 button,select{padding:10px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:700;font-size:14px}
 button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#166534;border-color:#22c55e}
 .main{display:block;padding:10px;max-width:720px;margin:0 auto}
@@ -23,7 +23,7 @@ button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#1
 .editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .editor-row label{display:block;color:#cbd5e1;font-size:12px;margin-bottom:4px}
 .editor-row select{width:100%}
-.editor-actions{display:flex;gap:8px;justify-content:flex-end}
+.editor-actions{display:flex;gap:8px;justify-content:flex-end}.editor-actions button{flex:1}
 .editor-actions button{padding:8px 12px}
 h2,h3{margin-top:0}
 .info{color:#cbd5e1;line-height:1.6;font-size:14px}
@@ -39,9 +39,10 @@ h2,h3{margin-top:0}
 .count-tab{padding:8px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:800;cursor:pointer}
 .count-tab.active{background:#166534;border-color:#22c55e}
 .material-grid{display:grid;grid-template-columns:1fr;gap:8px}
-.material-card{background:#111827;border:1px solid #334155;border-radius:10px;padding:10px}
+.material-card{background:#111827;border:1px solid #334155;border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px}
+.material-icon{width:34px;height:34px;object-fit:contain;flex:none}
 .material-card .label{color:#94a3b8;font-size:12px}
-.material-card .value{font-size:22px;font-weight:900;margin-top:4px}
+.material-card .value{font-size:22px;font-weight:900;margin-top:2px}
 @media(max-width:700px){.material-grid{grid-template-columns:1fr}}
 .preset-box{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px}
 .preset-btn{padding:8px 10px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:800;cursor:pointer}
@@ -73,6 +74,11 @@ h2,h3{margin-top:0}
     </div>
     <div id="goalResult"></div>
   </div>
+  <div class="total-box" style="margin-bottom:12px">
+    <h3>詳細設定</h3>
+    <div class="info">スキルツリー上のマーカーをタップして、現在Lvと目標Lvを設定します。入力後は「計算する」で詳細不足分へ移動します。</div>
+  </div>
+
   <div class="tree-troops">
     <button class="troop active" data-troop="shield">盾</button>
     <button class="troop" data-troop="bow">弓</button>
@@ -96,21 +102,6 @@ h2,h3{margin-top:0}
   <h2 id="title">盾の研究設定</h2>
   <p class="info">スキルツリー上のマーカーをタップすると、その項目だけ設定できます。全項目の常時表示はしません。</p>
   <div id="goalSummary" class="info" style="background:#111827;border:1px solid #334155;border-radius:10px;padding:10px;margin-bottom:10px"></div>
-
-  <div class="info" style="font-weight:900;margin-bottom:4px">現在の研究状況を簡単設定</div>
-  <div class="preset-box">
-    <button class="preset-btn current-set" data-current="zero">未解放</button>
-    <button class="preset-btn current-set" data-current="unlock">T12解放済み</button>
-    <button class="preset-btn current-set" data-current="skill">スキルまで研究済み</button>
-    <button class="preset-btn current-set" data-current="max">カンスト済み</button>
-  </div>
-
-  <div class="info" style="font-weight:900;margin-bottom:4px">目標を簡単設定</div>
-  <div class="preset-box">
-    <button class="preset-btn target-set" data-target="unlock">T12解放まで</button>
-    <button class="preset-btn target-set" data-target="skill">スキル解放まで</button>
-    <button class="preset-btn target-set" data-target="max">カンストまで</button>
-  </div>
 </aside>
 
 <div id="nodeEditor" class="node-editor">
@@ -128,17 +119,36 @@ h2,h3{margin-top:0}
     </div>
   </div>
   <div class="editor-actions">
-    <button id="editorClose">閉じる</button>
+    <button id="editorCalc">計算する</button>
+    <button id="editorClose">続けて入力</button>
   </div>
 </div>
 </div>
 
 <script>
 
+const ICONS = {
+  refined: "S__123297796_0.jpg",
+  particle: "S__123297797_0.jpg",
+  steel: "S__123297798_0.jpg"
+};
+
+function materialCard(key, label, value){
+  return `<div class="material-card">
+    <img class="material-icon" src="${ICONS[key]}" alt="${label}">
+    <div><div class="label">${label}</div><div class="value">${fmt(value)}</div></div>
+  </div>`;
+}
+
+function fmtTime(days){
+  if(!days || days <= 0) return "";
+  return Math.ceil(days) + "D";
+}
+
 const GOAL_COSTS = {
-  unlock: { label:"T12解放まで", steel:1620000, refined:440, particle:3080 },
-  skill:  { label:"スキル解放まで", steel:4263000, refined:898, particle:6235 },
-  max:    { label:"カンストまで", steel:17774250, refined:3895, particle:67944 }
+  unlock: { label:"T12解放まで", steel:1620000, refined:440, particle:3080, time:0 },
+  skill:  { label:"スキル解放まで", steel:4263000, refined:898, particle:6235, time:0 },
+  max:    { label:"カンストまで", steel:17774250, refined:3895, particle:67944, time:0 }
 };
 let resultTroopCount = 1;
 
@@ -148,21 +158,22 @@ function renderGoalResult(){
   const count = resultTroopCount;
   document.getElementById("goalResult").innerHTML = `
     <div class="material-grid">
-      <div class="material-card"><div class="label">精錬火晶</div><div class="value">${fmt(c.refined * count)}</div></div>
-      <div class="material-card"><div class="label">火晶微粒子</div><div class="value">${fmt(c.particle * count)}</div></div>
-      <div class="material-card"><div class="label">鋼材</div><div class="value">${fmt(c.steel * count)}</div></div>
+      ${materialCard("refined", "精錬火晶", c.refined * count)}
+      ${materialCard("particle", "火晶微粒子", c.particle * count)}
+      ${materialCard("steel", "鋼材", c.steel * count)}
+      ${c.time ? `<div class="material-card"><div><div class="label">研究時間</div><div class="value">${fmtTime(c.time * count)}</div></div></div>` : ""}
     </div>
   `;
 }
 
 
 const COSTS = {
-  unlock: { refined:440, particle:3080, steel:1620000 },
-  ability1_each: { refined:77, particle:545, steel:510750 },
-  skill: { refined:150, particle:975, steel:600000 },
-  ability2_each: { refined:360, particle:5610, steel:1350000 },
-  capacity: { refined:117, particle:1829, steel:611250 },
-  ability3_each: { refined:360, particle:9360, steel:1875000 }
+  unlock: { refined:440, particle:3080, steel:1620000, time:0 },
+  ability1_each: { refined:77, particle:545, steel:510750, time:0 },
+  skill: { refined:150, particle:975, steel:600000, time:0 },
+  ability2_each: { refined:360, particle:5610, steel:1350000, time:0 },
+  capacity: { refined:117, particle:1829, steel:611250, time:0 },
+  ability3_each: { refined:360, particle:9360, steel:1875000, time:0 }
 };
 
 function costForNode(key, lv){
@@ -193,7 +204,8 @@ function scaleCost(c, rate){
   return {
     refined: c.refined * rate,
     particle: c.particle * rate,
-    steel: c.steel * rate
+    steel: c.steel * rate,
+    time: (c.time || 0) * rate
   };
 }
 
@@ -201,6 +213,7 @@ function addCost(a,b){
   a.refined += b.refined || 0;
   a.particle += b.particle || 0;
   a.steel += b.steel || 0;
+  a.time += b.time || 0;
   return a;
 }
 
@@ -240,7 +253,7 @@ function hasAny(type, keys){
 }
 
 function shortageForTroop(t){
-  const total = {refined:0, particle:0, steel:0};
+  const total = {refined:0, particle:0, steel:0, time:0};
   Object.keys(nodeName).forEach(k=>{
     const cur = state[t][k].current || 0;
     const tar = state[t][k].target || 0;
@@ -250,7 +263,8 @@ function shortageForTroop(t){
     addCost(total, {
       refined: c2.refined - c1.refined,
       particle: c2.particle - c1.particle,
-      steel: c2.steel - c1.steel
+      steel: c2.steel - c1.steel,
+      time: c2.time - c1.time
     });
   });
   return total;
@@ -259,18 +273,18 @@ function shortageForTroop(t){
 function renderTotalResult(){
   const rows = ["shield","bow","spear"].map(t=>{
     const r = shortageForTroop(t);
-    return `<tr><td>${troopName[t]}</td><td>${fmt(r.refined)}</td><td>${fmt(r.particle)}</td><td>${fmt(r.steel)}</td></tr>`;
+    return `<tr><td>${troopName[t]}</td><td>${fmt(r.refined)}</td><td>${fmt(r.particle)}</td><td>${fmt(r.steel)}</td><td>${fmtTime(r.time)}</td></tr>`;
   }).join("");
 
-  const total = {refined:0, particle:0, steel:0};
+  const total = {refined:0, particle:0, steel:0, time:0};
   ["shield","bow","spear"].forEach(t=>addCost(total, shortageForTroop(t)));
 
   document.getElementById("totalResult").innerHTML = `
     <table class="result-table">
-      <thead><tr><th>対象</th><th>精錬火晶</th><th>火晶微粒子</th><th>鋼材</th></tr></thead>
+      <thead><tr><th>対象</th><th>精錬火晶</th><th>火晶微粒子</th><th>鋼材</th><th>研究時間</th></tr></thead>
       <tbody>
         ${rows}
-        <tr style="font-weight:900;color:#86efac"><td>合計</td><td>${fmt(total.refined)}</td><td>${fmt(total.particle)}</td><td>${fmt(total.steel)}</td></tr>
+        <tr style="font-weight:900;color:#86efac"><td>合計</td><td>${fmt(total.refined)}</td><td>${fmt(total.particle)}</td><td>${fmt(total.steel)}</td><td>${fmtTime(total.time)}</td></tr>
       </tbody>
     </table>
   `;
@@ -475,6 +489,16 @@ function closeEditor(){
   document.getElementById("nodeEditor").classList.remove("open");
 }
 
+function calculateAndScroll(){
+  renderTotalResult();
+  closeEditor();
+  const result = document.getElementById("totalResult");
+  if(result){
+    result.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+}
+
+
 function switchTroop(t){
   troop = t;
   selected = "unlock";
@@ -500,6 +524,7 @@ document.querySelectorAll(".count-tab").forEach(b=>b.addEventListener("click",()
 
 document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>switchTroop(b.dataset.troop)));
 document.getElementById("editorClose").addEventListener("click", closeEditor);
+document.getElementById("editorCalc").addEventListener("click", calculateAndScroll);
 setupPresetButtons();
 
 renderGoalResult();
