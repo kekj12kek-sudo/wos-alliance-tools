@@ -49,7 +49,7 @@ h2,h3{margin-top:0}
 .quick-btn.selected{background:rgba(180,83,9,.88);border-color:#fde68a}
 /* 兵種バー */
 .troop-bar{display:flex;gap:0;margin:0 0 6px;border-radius:12px;overflow:hidden;border:2px solid #7c4a00}
-.troop-bar .troop{flex:1;border-radius:0;border:none;border-right:1px solid #7c4a00;padding:12px 4px;font-size:15px;background:#2a1400;transition:background .15s}
+.troop-bar .troop{flex:1;border-radius:0;border:none;border-right:1px solid #7c4a00;padding:8px 4px;font-size:13px;background:#2a1400;transition:background .15s;display:flex;flex-direction:column;align-items:center;gap:2px}
 .troop-bar .troop:last-child{border-right:none}
 .troop-bar .troop.active{background:#92400e;color:#fde68a;font-weight:900}
 /* エディター */
@@ -63,11 +63,21 @@ h2,h3{margin-top:0}
 .target-block label{color:#fde68a !important;font-weight:700}
 .btn-current{width:100%;margin-top:8px;background:#166534;border-color:#22c55e;font-size:12px;padding:7px}
 .btn-target{width:100%;margin-top:8px;background:#92400e;border-color:#f59e0b;font-size:12px;padding:7px}
+/* 兵種カラー */
+.troop-bar .troop-shield.active{background:#14532d;border-color:#22c55e;color:#86efac}
+.troop-bar .troop-bow.active{background:#713f12;border-color:#eab308;color:#fef08a}
+.troop-bar .troop-spear.active{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd}
+.troop-bar .troop-shield:not(.active):hover{background:#166534}
+.troop-bar .troop-bow:not(.active):hover{background:#854d0e}
+.troop-bar .troop-spear:not(.active):hover{background:#1d4ed8}
+/* リセットボタン */
+.btn-reset{width:100%;margin-top:8px;background:#4c1d1d;border:1px solid #ef4444;color:#fca5a5;font-size:12px;padding:7px;border-radius:10px;font-weight:700;touch-action:manipulation}
 /* 使い方説明リスト */
 .info-list{margin:6px 0 10px;display:flex;flex-direction:column;gap:5px}
 .info-item{font-size:13px;color:#c9a87c;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid #7c4a00;line-height:1.4}
 /* テーブルアイコン */
 .th-icon{width:16px;height:16px;vertical-align:middle;margin-right:2px;object-fit:contain}
+.troop-img{width:44px;height:44px;object-fit:contain}
 </style>
 </head>
 <body>
@@ -104,9 +114,9 @@ h2,h3{margin-top:0}
     </div>
   </div>
 <div class="troop-bar">
-    <button class="troop active" data-troop="shield">🛡 盾兵</button>
-    <button class="troop" data-troop="bow">🏹 弓兵</button>
-    <button class="troop" data-troop="spear">🗡 槍兵</button>
+    <button class="troop troop-shield active" data-troop="shield"><img src="shield_char.png" class="troop-img">🛡 盾兵</button>
+    <button class="troop troop-bow" data-troop="bow"><img src="bow_char.png" class="troop-img">🏹 弓兵</button>
+    <button class="troop troop-spear" data-troop="spear"><img src="spear_char.png" class="troop-img">⚔️ 槍兵</button>
   </div>
   <div class="stage">
   <div id="treeWrap">
@@ -144,7 +154,7 @@ h2,h3{margin-top:0}
   </div>
   <div class="editor-actions">
     <button id="editorCalc">📊 計算する</button>
-    <button id="editorClose">続けて入力</button>
+    <button id="editorClose">閉じる</button>
   </div>
 </div>
 </div>
@@ -665,14 +675,20 @@ function openEditor(k){
     openEditor(k);
     renderTotalResult();
   };
-  document.getElementById("editorMaxCurrent").onclick = () => {
-    state[troop][k].current = maxLv[k];
+  const btnCur = document.getElementById("editorMaxCurrent");
+  const btnTar = document.getElementById("editorMaxTarget");
+  btnCur.textContent = state[troop][k].current >= maxLv[k] ? "↩ リセット" : "✓ カンスト済み";
+  btnCur.className = state[troop][k].current >= maxLv[k] ? "btn-reset" : "btn-current";
+  btnTar.textContent = state[troop][k].target >= maxLv[k] ? "↩ リセット" : "↑ Lv MAX";
+  btnTar.className = state[troop][k].target >= maxLv[k] ? "btn-reset" : "btn-target";
+  btnCur.onclick = () => {
+    state[troop][k].current = state[troop][k].current >= maxLv[k] ? 0 : maxLv[k];
     normalizePrereqFor("current");
     openEditor(k);
     renderTotalResult();
   };
-  document.getElementById("editorMaxTarget").onclick = () => {
-    state[troop][k].target = maxLv[k];
+  btnTar.onclick = () => {
+    state[troop][k].target = state[troop][k].target >= maxLv[k] ? 0 : maxLv[k];
     normalizePrereqFor("target");
     openEditor(k);
     renderTotalResult();
@@ -698,7 +714,9 @@ function switchTroop(t){
   troop = t;
   selected = "unlock";
   img.src = imageMap[troop];
-  document.querySelectorAll(".troop").forEach(b=>b.classList.toggle("active", b.dataset.troop===troop));
+  document.querySelectorAll(".troop").forEach(b=>{
+    b.classList.toggle("active", b.dataset.troop===troop);
+  });
   renderTable();
   renderMarkers();
   syncQuickControls();
