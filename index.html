@@ -449,14 +449,10 @@ const img = document.getElementById("treeImage");
 
 
 const quickButtonName = {
-  ability1_max: "✓ 能力Ⅰ
-研究済",
-  skill_max: "✓ スキル
-研究済",
-  ability2_max: "✓ 能力Ⅱ
-研究済",
-  capacity_max: "✓ 容量
-研究済"
+  ability1_max: "✓ 能力Ⅰ\n研究済",
+  skill_max: "✓ スキル\n研究済",
+  ability2_max: "✓ 能力Ⅱ\n研究済",
+  capacity_max: "✓ 容量\n研究済"
 };
 
 const quickButtonData = {
@@ -570,8 +566,7 @@ function renderQuickButtons(){
     const b = document.createElement("button");
     b.className = "quick-btn" + (isQuickApplied(k) ? " selected" : "");
     b.dataset.key = k;
-    b.innerText = quickButtonName[k].replace("\n", "
-");
+    b.innerHTML = quickButtonName[k].replace("\\n", "<br>");
     b.style.left = d.x + "%";
     b.style.top = d.y + "%";
     b.style.width = d.w + "px";
@@ -605,8 +600,14 @@ function makeOptions(max){
 }
 
 function renderMarkers(){
+  const imgEl = document.getElementById("treeImage");
+  if(!imgEl.clientWidth){
+    imgEl.addEventListener("load", renderMarkers, {once:true});
+    return;
+  }
   document.querySelectorAll(".marker").forEach(m=>m.remove());
   const layout = layouts[troop];
+  const scale = imgEl.clientWidth / 900;
   Object.keys(nodeName).forEach(k=>{
     const p = layout[k];
     if(!p){ console.warn("renderMarkers: layout missing for key="+k+" troop="+troop); return; }
@@ -616,7 +617,6 @@ function renderMarkers(){
     m.innerHTML = nodeName[k].replace(" ","<br>");
     m.style.left = p.x + "%";
     m.style.top = p.y + "%";
-    const scale = document.getElementById("treeImage").clientWidth / 900;
     const displaySize = Math.max(32, p.size * scale);
     m.style.width = displaySize + "px";
     m.style.height = displaySize + "px";
