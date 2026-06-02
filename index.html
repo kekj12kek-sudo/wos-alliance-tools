@@ -233,7 +233,7 @@ const COSTS = {
 
 function costForNode(key, lv){
   lv = Number(lv) || 0;
-  if(lv <= 0) return {refined:0, particle:0, steel:0};
+  if(lv <= 0) return {refined:0, particle:0, steel:0, time:0};
   if(key === "unlock"){
     return scaleCost(COSTS.unlock, lv / 1);
   }
@@ -252,7 +252,7 @@ function costForNode(key, lv){
   if(key.startsWith("ability3_")){
     return scaleCost(COSTS.ability3_each, lv / 50);
   }
-  return {refined:0, particle:0, steel:0};
+  return {refined:0, particle:0, steel:0, time:0};
 }
 
 function scaleCost(c, rate){
@@ -319,7 +319,7 @@ function shortageForTroop(t){
       refined: c2.refined - c1.refined,
       particle: c2.particle - c1.particle,
       steel: c2.steel - c1.steel,
-      time: c2.time - c1.time
+      time: (c2.time || 0) - (c1.time || 0)
     });
   });
   return total;
