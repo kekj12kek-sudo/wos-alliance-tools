@@ -189,15 +189,21 @@ function materialCard(key, label, value){
   </div>`;
 }
 
-function fmtTime(days){
-  if(!days || days <= 0) return "";
-  return Math.ceil(days) + "D";
+function fmtTime(sec){
+  if(!sec || sec <= 0) return "";
+  sec = Math.round(sec);
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const hms = [h,m,s].map(v=>String(v).padStart(2,"0")).join(":");
+  return d > 0 ? d + "D " + hms : hms;
 }
 
 const GOAL_COSTS = {
-  unlock: { label:"T12解放まで", steel:1620000, refined:440, particle:3080, time:0 },
-  skill:  { label:"スキル解放まで", steel:4263000, refined:898, particle:6235, time:0 },
-  max:    { label:"カンストまで", steel:17774250, refined:3895, particle:67944, time:0 }
+  unlock: { label:"T12解放まで",   steel:1620000,  refined:440,  particle:3080,  time:0 },
+  skill:  { label:"スキル解放まで", steel:4263000,  refined:898,  particle:6235,  time:10087200 },
+  max:    { label:"カンストまで",   steel:17774250, refined:3895, particle:67944, time:76814640 }
 };
 let resultTroopCount = 1;
 
@@ -217,12 +223,12 @@ function renderGoalResult(){
 
 
 const COSTS = {
-  unlock: { refined:440, particle:3080, steel:1620000, time:0 },
-  ability1_each: { refined:77, particle:545, steel:510750, time:0 },
-  skill: { refined:150, particle:975, steel:600000, time:0 },
-  ability2_each: { refined:360, particle:5610, steel:1350000, time:0 },
-  capacity: { refined:117, particle:1829, steel:611250, time:0 },
-  ability3_each: { refined:360, particle:9360, steel:1875000, time:0 }
+  unlock:       { refined:440,  particle:3080,  steel:1620000, time:0 },
+  ability1_each:{ refined:77,   particle:545,   steel:510750,  time:1225800 },
+  skill:        { refined:150,  particle:975,   steel:600000,  time:5184000 },
+  ability2_each:{ refined:360,  particle:5610,  steel:1350000, time:3240000 },
+  capacity:     { refined:117,  particle:1829,  steel:611250,  time:1063440 },
+  ability3_each:{ refined:360,  particle:9360,  steel:1875000, time:13176000 }
 };
 
 function costForNode(key, lv){
@@ -610,7 +616,7 @@ function renderMarkers(){
   const scale = imgEl.clientWidth / 900;
   Object.keys(nodeName).forEach(k=>{
     const p = layout[k];
-    if(!p){ console.warn("renderMarkers: layout missing for key="+k+" troop="+troop); return; }
+    if(!p){ console.warn("layout missing: "+k); return; }
     const m = document.createElement("button");
     m.className = "marker" + (k===selected ? " selected" : "");
     m.dataset.key = k;
