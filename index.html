@@ -110,9 +110,6 @@ h2,h3{margin-top:0}
 /* エクスポートボタン */
 .btn-export{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;touch-action:manipulation}
 .btn-export:active{background:#1e293b}
-/* 多言語 */
-.lang-btn{padding:5px 10px;font-size:11px;border-radius:8px;border:1px solid #475569;background:#1e293b;color:#94a3b8;cursor:pointer;touch-action:manipulation}
-.lang-btn.active{border-color:#f59e0b;color:#fde68a;background:#2a1400}
 /* ポップアップサマリー */
 .editor-summary{font-size:12px;color:#94a3b8;margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,.05);border-radius:8px}
 .editor-summary .warn-text{color:#f87171}
@@ -180,10 +177,6 @@ h2,h3{margin-top:0}
 <button class="goal" data-goal="skill">スキル解放まで</button>
 <button class="goal" data-goal="capacity">容量解放まで</button>
 <button class="goal" data-goal="max">カンストまで</button>
-<div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-  <button class="lang-btn active" data-lang="ja">JP</button>
-  <button class="lang-btn" data-lang="en">EN</button>
-</div>
 <div class="header-user" id="headerUser" style="display:none">
   <span class="header-username" id="headerUsername"></span>
   <button class="btn-user-reset" id="btnChangeUser">変更</button>
@@ -294,7 +287,6 @@ function saveState(){
     goal: goal,
     resultTroopCount: resultTroopCount,
     stock: getStock(),
-    lang: currentLang,
     savedAt: new Date().toISOString()
   };
   localStorage.setItem(getSaveKey(), JSON.stringify(data));
@@ -326,7 +318,6 @@ function loadState(){
       if(document.getElementById("stock-particle")) document.getElementById("stock-particle").value = s.particle || 0;
       if(document.getElementById("stock-steel"))   document.getElementById("stock-steel").value   = s.steel   || 0;
     }
-    if(data.lang) setLang(data.lang);
     return true;
   } catch(e){ return false; }
 }
@@ -411,47 +402,14 @@ function getStock(){
   });
 });
 
-// =========================================================
-// 多言語
-// =========================================================
-let currentLang = "ja";
-const I18N = {
-  ja: {
+// 固定日本語（多言語なし）
+function t(key){
+  const dict = {
     refined:"精錬火晶", particle:"火晶微粒子", steel:"鋼材", time:"⏱研究時間",
     shortage:"不足", surplus:"充足", shield:"盾", bow:"弓", spear:"槍", total:"合計",
-    current:"📍 現在Lv", target:"🎯 目標Lv", maxed:"✓ カンスト済み", reset:"↩ リセット", lvmax:"↑ Lv MAX",
-    calc:"📊 計算する", close:"閉じる",
-  },
-  en: {
-    refined:"Refined", particle:"Particle", steel:"Steel", time:"⏱Time",
-    shortage:"Shortage", surplus:"Enough", shield:"Shield", bow:"Bow", spear:"Spear", total:"Total",
-    current:"📍 Current Lv", target:"🎯 Target Lv", maxed:"✓ Maxed", reset:"↩ Reset", lvmax:"↑ Max Lv",
-    calc:"📊 Calculate", close:"Close",
-  }
-};
-
-function t(key){ return I18N[currentLang][key] || key; }
-
-function setLang(lang){
-  currentLang = lang;
-  document.querySelectorAll(".lang-btn").forEach(b=>b.classList.toggle("active", b.dataset.lang===lang));
-  // エディターラベル更新
-  const cur = document.querySelector(".current-block label");
-  const tar = document.querySelector(".target-block label");
-  if(cur) cur.textContent = t("current");
-  if(tar) tar.textContent = t("target");
-  const calc = document.getElementById("editorCalc");
-  const cl   = document.getElementById("editorClose");
-  if(calc) calc.textContent = t("calc");
-  if(cl)   cl.textContent   = t("close");
-  renderGoalResult();
-  renderTotalResult();
+  };
+  return dict[key] || key;
 }
-
-document.querySelectorAll(".lang-btn").forEach(b=>b.addEventListener("click",()=>{
-  setLang(b.dataset.lang);
-  saveState();
-}));
 
 // =========================================================
 // 兵種リセット
