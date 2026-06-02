@@ -26,12 +26,28 @@ let nodePositions = loadNodePositions();
 let markerSize = loadMarkerSize();
 let calibrating = false;
 
+function layoutKey(troop = selectedTroop){
+  return `t12_layout_${troop}_v2`;
+}
+
+function loadSavedLayout(troop = selectedTroop){
+  try {
+    const saved = localStorage.getItem(layoutKey(troop));
+    if(saved) return JSON.parse(saved);
+  } catch(e) {}
+  return null;
+}
+
 function loadNodePositions(){
+  const saved = loadSavedLayout(selectedTroop);
+  if(saved && saved.positions) return { ...DEFAULT_POSITIONS, ...saved.positions };
   return { ...DEFAULT_POSITIONS };
 }
 
 function loadMarkerSize(){
-  return 72;
+  const saved = loadSavedLayout(selectedTroop);
+  if(saved && saved.markerSize) return Number(saved.markerSize) || 86;
+  return 86;
 }
 
 function reloadTroopLayout(){
@@ -107,6 +123,7 @@ function setupNodeDragging(){
         top: Math.max(0, Math.min(100, top))
       };
       applyNodePositions();
+      refreshCoordinateOutput();
     });
 
     node.addEventListener("pointerup", e=>{
@@ -132,6 +149,7 @@ function setupCalibrationButtons(){
       markerSize = Math.max(40, Math.min(160, Number(sizeInput.value) || 86));
       applyMarkerSize();
       applyNodePositions();
+      refreshCoordinateOutput();
     });
   }
 }
@@ -289,6 +307,7 @@ function renderLevelTable(){
     sel.addEventListener("change", e=>{
       t[type][key] = Number(e.target.value);
       renderDetail();
+      refreshCoordinateOutput();
     });
   });
   markNodes();
@@ -409,6 +428,62 @@ function renderDetail(){
   markNodes();
 }
 
+
+function buildCoordinateText(){
+  const lines = [];
+  lines.push(`# ${TROOP_NAMES[selectedTroop]} layout`);
+  lines.push(`marker_size ${markerSize}`);
+  lines.push("");
+  for (const key of Object.keys(NODE_NAMES)) {
+    const pos = nodePositions[key] || DEFAULT_POSITIONS[key];
+    const name = NODE_NAMES[key];
+    lines.push(`${key}\t${name}\tx=${pos.left.toFixed(2)}\ty=${pos.top.toFixed(2)}`);
+  }
+
+  lines.push("");
+  lines.push("JSON:");
+  const json = {};
+  json[selectedTroop] = { markerSize, positions: {} };
+  for (const key of Object.keys(NODE_NAMES)) {
+    const pos = nodePositions[key] || DEFAULT_POSITIONS[key];
+    json[selectedTroop].positions[key] = {
+      name: NODE_NAMES[key],
+      x: Number(pos.left.toFixed(2)),
+      y: Number(pos.top.toFixed(2))
+    };
+  }
+  lines.push(JSON.stringify(json, null, 2));
+  return lines.join("\\n");
+}
+
+function refreshCoordinateOutput(){
+  const out = document.getElementById("coordinateOutput");
+  if(!out) return;
+  out.value = buildCoordinateText();
+}
+
+async function copyCoordinateOutput(){
+  refreshCoordinateOutput();
+  const out = document.getElementById("coordinateOutput");
+  if(!out) return;
+  try {
+    await navigator.clipboard.writeText(out.value);
+    alert("座標一覧をコピーしました。");
+  } catch(e) {
+    out.select();
+    document.execCommand("copy");
+    alert("座標一覧をコピーしました。");
+  }
+}
+
+function setupCoordinateExport(){
+  const refresh = document.getElementById("refreshCoordinates");
+  const copy = document.getElementById("copyCoordinates");
+  if(refresh) refresh.addEventListener("click", refreshCoordinateOutput);
+  if(copy) copy.addEventListener("click", copyCoordinateOutput);
+  refreshCoordinateOutput();
+}
+
 document.addEventListener("DOMContentLoaded", ()=>{
   setGoalButtons();
   setTroopButtons();
@@ -417,15 +492,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
   reloadTroopLayout();
   setupNodeDragging();
   setupCalibrationButtons();
+  setupCoordinateExport();
   document.querySelectorAll(".node").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       selectedNode = btn.dataset.key;
       markNodes();
-      const sel = document.querySelector(`select[data-type="current"][data-key="${selectedNode}"]`);
-      if(sel) {
-        sel.closest(".level-row").scrollIntoView({behavior:"smooth", block:"center"});
-        sel.focus();
-      }
+      const sel = document.querySelector(`select[data-type="target"][data-key="${selectedNode}"]`);
+      if(sel) sel.focus();
     });
   });
   document.getElementById("applyGoalToTroop").addEventListener("click", applyGoalToTroop);

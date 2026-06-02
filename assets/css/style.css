@@ -77,3 +77,28 @@
 
 .node br { display:block; }
 .node { line-height: 1.15; }
+
+
+/* Ver8 production: fixed markers */
+.node {
+  cursor: pointer;
+}
+.level-row:focus-within {
+  border-color: rgba(255,173,84,.75);
+  box-shadow: 0 0 0 2px rgba(255,173,84,.15);
+}
+
+
+.coordinate-output {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: #0f1422;
+  color: #eef2ff;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  line-height: 1.5;
+  white-space: pre;
+}

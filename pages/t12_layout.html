@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>T12研究シミュレーター</title>
+  <title>T12マーカー座標調整</title>
   <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
 <body>
   <header class="topbar">
-    <a class="back" href="../index.html">← トップへ戻る</a>
-    <h1 class="page-title">T12研究シミュレーター</h1>
+    <a class="back" href="t12.html">← T12へ戻る</a>
+    <h1 class="page-title">T12マーカー座標調整</h1>
   </header>
 
   <main class="layout">
@@ -53,7 +53,20 @@
 
     <section class="panel">
       <h2 class="section-title">5. スキルツリー詳細設定</h2>
-      <p class="mode-note">マーカーは固定位置です。タップすると右側の現在Lv・目標Lv設定へ移動します。Lv0は未解放扱いです。</p>
+      <p class="mode-note">アイコンをタップして、現在Lvと目標Lvを設定します。Lv0は未解放扱いです。</p>
+      <div class="calibration-tools">
+        <button class="small-btn" id="toggleCalibrate">位置調整モード OFF</button>
+
+        <label class="marker-size-box">
+          <span>マーカーサイズ</span>
+          <input id="markerSize" type="number" min="40" max="160" step="2" value="86">
+          <span>px</span>
+        </label>
+
+        <button class="small-btn" id="savePositions">レイアウトを登録</button>
+        <button class="small-btn" id="resetPositions">初期位置に戻す</button>
+      </div>
+      <p class="subtle">サイズを調整してから位置調整モードONでマーカーをドラッグしてください。「レイアウトを登録」で座標とサイズを保存します。</p>
 
       <div class="detail-wrap">
         <div class="tree-box" id="treeBox">
@@ -100,6 +113,6 @@
     </section>
   </main>
 
-  <script src="../assets/js/t12.js"></script>
+  <script src="../assets/js/t12_layout.js"></script>
 </body>
 </html>
