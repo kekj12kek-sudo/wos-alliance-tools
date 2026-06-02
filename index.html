@@ -63,15 +63,9 @@ h2,h3{margin-top:0}
 
 <div class="main">
 <section>
-  <div class="total-box">
-    <h3>全兵種 合算不足分</h3>
-    <div class="info">盾・弓・槍それぞれの現在Lvと目標Lvから、不足素材を合算します。</div>
-    <div id="totalResult"></div>
-  </div>
-
   <div class="goal-result">
     <h3>大枠目標の必要素材</h3>
-    <div class="info">基本は1兵種分です。タブで2兵種・3兵種の合計へ切替できます。</div>
+    <div class="info">0ベースからの必要素材です。基本は1兵種分、タブで2兵種・3兵種の合計へ切替できます。</div>
     <div class="count-tabs">
       <button class="count-tab active" data-count="1">1兵種</button>
       <button class="count-tab" data-count="2">2兵種</button>
@@ -89,13 +83,19 @@ h2,h3{margin-top:0}
     <img id="treeImage" src="S__123273220_0.jpg" alt="T12研究ツリー">
   </div>
 </div>
+
+  <div class="total-box" style="margin-top:12px">
+    <h3>詳細設定の不足分</h3>
+    <div class="info">スキルツリーで設定した現在Lvから目標Lvまでの不足分です。盾・弓・槍の合算も表示します。</div>
+    <div id="totalResult"></div>
+  </div>
+
 </section>
 
 <aside class="side">
   <h2 id="title">盾の研究設定</h2>
   <p class="info">スキルツリー上のマーカーをタップすると、その項目だけ設定できます。全項目の常時表示はしません。</p>
   <div id="goalSummary" class="info" style="background:#111827;border:1px solid #334155;border-radius:10px;padding:10px;margin-bottom:10px"></div>
-  <div class="warn">前提条件：能力ⅠがMAXでないとスキルへ進めません。能力ⅡがMAXでないと容量MAXへ進めません。容量MAXでないと能力Ⅲへ進めません。</div>
 
   <div class="info" style="font-weight:900;margin-bottom:4px">現在の研究状況を簡単設定</div>
   <div class="preset-box">
@@ -376,10 +376,7 @@ function setupPresetButtons(){
     applyPresetTo("current", b.dataset.current);
   }));
   document.querySelectorAll(".target-set").forEach(b=>b.addEventListener("click",()=>{
-    goal = b.dataset.target;
-    document.querySelectorAll(".goal").forEach(x=>x.classList.toggle("active", x.dataset.goal===goal));
     applyPresetTo("target", b.dataset.target);
-    renderGoalResult();
   }));
 }
 
@@ -418,8 +415,8 @@ function renderTable(){
   renderTotalResult();
   document.getElementById("title").textContent = troopName[troop] + "の研究設定";
   document.getElementById("goalSummary").innerHTML =
-    "選択中の大枠目標：<b>" + goalLabel[goal] + "</b><br>" +
-    "マーカーをタップして、必要な項目だけ現在Lv・目標Lvを設定します。";
+    "詳細設定：マーカーをタップして、必要な項目だけ現在Lv・目標Lvを設定します。<br>" +
+    "大枠3項目の結果は上部に0ベースで表示しています。";
 }
 
 function focusRow(k){
@@ -482,11 +479,8 @@ function switchTroop(t){
 document.querySelectorAll(".goal").forEach(b=>b.addEventListener("click",()=>{
   goal = b.dataset.goal;
   document.querySelectorAll(".goal").forEach(x=>x.classList.toggle("active", x.dataset.goal===goal));
-  applyGoalToTroop();
   renderGoalResult();
-  renderTotalResult();
   renderTable();
-  focusRow(selected);
 }));
 
 document.querySelectorAll(".count-tab").forEach(b=>b.addEventListener("click",()=>{
@@ -499,7 +493,6 @@ document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>sw
 document.getElementById("editorClose").addEventListener("click", closeEditor);
 setupPresetButtons();
 
-applyGoalToTroop();
 renderGoalResult();
 renderTotalResult();
 renderTable();
