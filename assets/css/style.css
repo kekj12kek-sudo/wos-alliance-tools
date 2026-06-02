@@ -74,3 +74,6 @@
   }
 }
 
+
+.node br { display:block; }
+.node { line-height: 1.15; }

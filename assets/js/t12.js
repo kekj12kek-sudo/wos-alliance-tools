@@ -1,31 +1,60 @@
 
 const DEFAULT_POSITIONS = {
-  unlock:   { left: 45, top: 4 },
-  ability1: { left: 12, top: 22 },
-  skill:    { left: 45, top: 36 },
-  ability2: { left: 12, top: 54 },
+  unlock: { left: 45, top: 4 },
+
+  ability1_atk:  { left: 18, top: 20 },
+  ability1_def:  { left: 38, top: 20 },
+  ability1_leth: { left: 58, top: 20 },
+  ability1_hp:   { left: 78, top: 20 },
+
+  skill: { left: 45, top: 36 },
+
+  ability2_atk:  { left: 18, top: 52 },
+  ability2_def:  { left: 38, top: 52 },
+  ability2_leth: { left: 58, top: 52 },
+  ability2_hp:   { left: 78, top: 52 },
+
   capacity: { left: 45, top: 68 },
-  ability3: { left: 12, top: 84 }
+
+  ability3_atk:  { left: 18, top: 84 },
+  ability3_def:  { left: 38, top: 84 },
+  ability3_leth: { left: 58, top: 84 },
+  ability3_hp:   { left: 78, top: 84 }
 };
 
 let nodePositions = loadNodePositions();
 let markerSize = loadMarkerSize();
 let calibrating = false;
 
-function loadNodePositions(){
+function layoutKey(troop = selectedTroop){
+  return `t12_layout_${troop}_v2`;
+}
+
+function loadSavedLayout(troop = selectedTroop){
   try {
-    const saved = localStorage.getItem("t12_node_positions_v1");
-    if(saved) return { ...DEFAULT_POSITIONS, ...JSON.parse(saved) };
+    const saved = localStorage.getItem(layoutKey(troop));
+    if(saved) return JSON.parse(saved);
   } catch(e) {}
+  return null;
+}
+
+function loadNodePositions(){
+  const saved = loadSavedLayout(selectedTroop);
+  if(saved && saved.positions) return { ...DEFAULT_POSITIONS, ...saved.positions };
   return { ...DEFAULT_POSITIONS };
 }
 
 function loadMarkerSize(){
-  try {
-    const saved = localStorage.getItem("t12_marker_size_v1");
-    if(saved) return Number(saved) || 86;
-  } catch(e) {}
+  const saved = loadSavedLayout(selectedTroop);
+  if(saved && saved.markerSize) return Number(saved.markerSize) || 86;
   return 86;
+}
+
+function reloadTroopLayout(){
+  nodePositions = loadNodePositions();
+  markerSize = loadMarkerSize();
+  applyMarkerSize();
+  applyNodePositions();
 }
 
 function applyMarkerSize(){
@@ -47,16 +76,17 @@ function applyNodePositions(){
 }
 
 function saveNodePositions(){
-  localStorage.setItem("t12_node_positions_v1", JSON.stringify(nodePositions));
-  localStorage.setItem("t12_marker_size_v1", String(markerSize));
-  alert("レイアウトを登録しました。この端末では座標とサイズが固定表示されます。");
+  localStorage.setItem(layoutKey(selectedTroop), JSON.stringify({
+    positions: nodePositions,
+    markerSize
+  }));
+  alert(`${TROOP_NAMES[selectedTroop]}のレイアウトを登録しました。この端末では兵種ごとに座標とサイズが固定表示されます。`);
 }
 
 function resetNodePositions(){
   nodePositions = { ...DEFAULT_POSITIONS };
   markerSize = 86;
-  localStorage.removeItem("t12_node_positions_v1");
-  localStorage.removeItem("t12_marker_size_v1");
+  localStorage.removeItem(layoutKey(selectedTroop));
   applyMarkerSize();
   applyNodePositions();
 }
@@ -152,14 +182,38 @@ const GOALS = {
   max:    { name: "カンストまで", steel: 17774250, refined: 3895, particle: 67944, meat: 570110000, wood: 570110000, coal: 114600000, iron: 29046000, time: 0 }
 };
 
-const MAX_LEVELS = { unlock: 1, ability1: 20, skill: 3, ability2: 50, capacity: 15, ability3: 50 };
-const NODE_NAMES = { unlock:"T12解放", ability1:"能力Ⅰ", skill:"スキル", ability2:"能力Ⅱ", capacity:"容量", ability3:"能力Ⅲ" };
+const MAX_LEVELS = {
+  unlock: 1,
+  ability1_atk: 20, ability1_def: 20, ability1_leth: 20, ability1_hp: 20,
+  skill: 3,
+  ability2_atk: 50, ability2_def: 50, ability2_leth: 50, ability2_hp: 50,
+  capacity: 15,
+  ability3_atk: 50, ability3_def: 50, ability3_leth: 50, ability3_hp: 50
+};
+
+const NODE_NAMES = {
+  unlock:"T12解放",
+  ability1_atk:"能力Ⅰ 攻撃", ability1_def:"能力Ⅰ 防御", ability1_leth:"能力Ⅰ 殺傷", ability1_hp:"能力Ⅰ HP",
+  skill:"スキル",
+  ability2_atk:"能力Ⅱ 攻撃", ability2_def:"能力Ⅱ 防御", ability2_leth:"能力Ⅱ 殺傷", ability2_hp:"能力Ⅱ HP",
+  capacity:"容量",
+  ability3_atk:"能力Ⅲ 攻撃", ability3_def:"能力Ⅲ 防御", ability3_leth:"能力Ⅲ 殺傷", ability3_hp:"能力Ⅲ HP"
+};
+
 const TROOP_NAMES = { shield:"盾", spear:"槍", bow:"弓" };
 
 // Ver1は大枠差分用に、各ノードを全体比率で仮配分。
 // 後でスプシ/JSONから正確な行データ読み込みへ差し替え可能。
 const NODE_WEIGHTS = {
-  unlock: .0912, ability1: .1150, skill: .0894, ability2: .1800, capacity: .2700, ability3: .2544
+  unlock: .0912,
+
+  ability1_atk: .02875, ability1_def: .02875, ability1_leth: .02875, ability1_hp: .02875,
+  skill: .0894,
+
+  ability2_atk: .0450, ability2_def: .0450, ability2_leth: .0450, ability2_hp: .0450,
+  capacity: .2700,
+
+  ability3_atk: .0636, ability3_def: .0636, ability3_leth: .0636, ability3_hp: .0636
 };
 
 let selectedGoal = "unlock";
@@ -172,11 +226,17 @@ const state = {
   bow: makeTroopState()
 };
 
+function emptyLevels(){
+  const out = {};
+  for (const key of Object.keys(NODE_NAMES)) out[key] = 0;
+  return out;
+}
+
 function makeTroopState(){
   return {
     enabled: true,
-    current: { unlock:0, ability1:0, skill:0, ability2:0, capacity:0, ability3:0 },
-    target:  { unlock:0, ability1:0, skill:0, ability2:0, capacity:0, ability3:0 }
+    current: emptyLevels(),
+    target: emptyLevels()
   };
 }
 
@@ -275,6 +335,7 @@ function setTroopButtons(){
       selectedTroop = b.dataset.troop;
       document.querySelectorAll(".troop-btn").forEach(x=>x.classList.toggle("active", x.dataset.troop === selectedTroop));
       updateTreeImage();
+      reloadTroopLayout();
       renderLevelTable();
       renderDetail();
     });
@@ -283,13 +344,21 @@ function setTroopButtons(){
 
 
 function presetLevels(kind){
-  const presets = {
-    zero:   { unlock:0, ability1:0,  skill:0, ability2:0,  capacity:0,  ability3:0 },
-    unlock: { unlock:1, ability1:0,  skill:0, ability2:0,  capacity:0,  ability3:0 },
-    skill:  { unlock:1, ability1:20, skill:3, ability2:0,  capacity:0,  ability3:0 },
-    max:    { unlock:1, ability1:20, skill:3, ability2:50, capacity:15, ability3:50 }
+  const zero = emptyLevels();
+  const unlock = { ...zero, unlock: 1 };
+  const skill = {
+    ...unlock,
+    ability1_atk:20, ability1_def:20, ability1_leth:20, ability1_hp:20,
+    skill:3
   };
-  return {...presets[kind]};
+  const max = {
+    ...skill,
+    ability2_atk:50, ability2_def:50, ability2_leth:50, ability2_hp:50,
+    capacity:15,
+    ability3_atk:50, ability3_def:50, ability3_leth:50, ability3_hp:50
+  };
+  const presets = { zero, unlock, skill, max };
+  return { ...presets[kind] };
 }
 
 function applyCurrentPreset(kind){
@@ -316,8 +385,8 @@ function applyGoalToTroop(){
 }
 
 function resetTroop(){
-  state[selectedTroop].current = { unlock:0, ability1:0, skill:0, ability2:0, capacity:0, ability3:0 };
-  state[selectedTroop].target  = { unlock:0, ability1:0, skill:0, ability2:0, capacity:0, ability3:0 };
+  state[selectedTroop].current = emptyLevels();
+  state[selectedTroop].target = emptyLevels();
   renderLevelTable();
   renderDetail();
 }
@@ -361,8 +430,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   setTroopButtons();
   setCurrentPresetButtons();
   updateTreeImage();
-  applyMarkerSize();
-  applyNodePositions();
+  reloadTroopLayout();
   setupNodeDragging();
   setupCalibrationButtons();
   document.querySelectorAll(".node").forEach(btn=>{
