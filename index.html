@@ -29,6 +29,9 @@ h2,h3{margin-top:0}
 .material-card .label{color:#94a3b8;font-size:12px}
 .material-card .value{font-size:20px;font-weight:900;margin-top:4px}
 @media(max-width:700px){.material-grid{grid-template-columns:1fr}}
+.preset-box{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px}
+.preset-btn{padding:8px 10px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:800;cursor:pointer}
+.preset-btn:hover{background:#334155}
 .level-row{display:grid;grid-template-columns:1fr 90px 90px;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #1f2937}
 .level-row.active{background:#1e293b;outline:2px solid #f59e0b;border-radius:10px}
 .level-row label{font-weight:700;font-size:13px}
@@ -69,8 +72,24 @@ h2,h3{margin-top:0}
 
 <aside class="side">
   <h2 id="title">盾の研究設定</h2>
-  <p class="info">大枠目標を選ぶと、目標Lvが一括で入ります。マーカーをタップすると該当項目へ移動します。</p>
+  <p class="info">マーカーをタップすると該当項目のレベル設定へ移動します。現在Lvと目標Lvを細かく選べます。</p>
   <div id="goalSummary" class="info" style="background:#111827;border:1px solid #334155;border-radius:10px;padding:10px;margin-bottom:10px"></div>
+
+  <div class="info" style="font-weight:900;margin-bottom:4px">現在の研究状況を簡単設定</div>
+  <div class="preset-box">
+    <button class="preset-btn current-set" data-current="zero">未解放</button>
+    <button class="preset-btn current-set" data-current="unlock">T12解放済み</button>
+    <button class="preset-btn current-set" data-current="skill">スキルまで研究済み</button>
+    <button class="preset-btn current-set" data-current="max">カンスト済み</button>
+  </div>
+
+  <div class="info" style="font-weight:900;margin-bottom:4px">目標を簡単設定</div>
+  <div class="preset-box">
+    <button class="preset-btn target-set" data-target="unlock">T12解放まで</button>
+    <button class="preset-btn target-set" data-target="skill">スキル解放まで</button>
+    <button class="preset-btn target-set" data-target="max">カンストまで</button>
+  </div>
+
   <div id="levelTable"></div>
 </aside>
 </div>
@@ -95,9 +114,9 @@ function renderGoalResult(){
   const count = resultTroopCount;
   document.getElementById("goalResult").innerHTML = `
     <div class="material-grid">
-      <div class="material-card"><div class="label">鋼材</div><div class="value">${fmt(c.steel * count)}</div></div>
       <div class="material-card"><div class="label">精錬火晶</div><div class="value">${fmt(c.refined * count)}</div></div>
       <div class="material-card"><div class="label">火晶微粒子</div><div class="value">${fmt(c.particle * count)}</div></div>
+      <div class="material-card"><div class="label">鋼材</div><div class="value">${fmt(c.steel * count)}</div></div>
     </div>
   `;
 }
@@ -186,6 +205,28 @@ function applyGoalToTroop(){
     state[troop][k].target = preset[k];
   });
 }
+
+function applyPresetTo(type, presetName){
+  const preset = goalPreset[presetName] || goalPreset.unlock;
+  Object.keys(preset).forEach(k => {
+    state[troop][k][type] = preset[k];
+  });
+  renderTable();
+  focusRow(selected);
+}
+
+function setupPresetButtons(){
+  document.querySelectorAll(".current-set").forEach(b=>b.addEventListener("click",()=>{
+    applyPresetTo("current", b.dataset.current);
+  }));
+  document.querySelectorAll(".target-set").forEach(b=>b.addEventListener("click",()=>{
+    goal = b.dataset.target;
+    document.querySelectorAll(".goal").forEach(x=>x.classList.toggle("active", x.dataset.goal===goal));
+    applyPresetTo("target", b.dataset.target);
+    renderGoalResult();
+  }));
+}
+
 const wrap = document.getElementById("treeWrap");
 const img = document.getElementById("treeImage");
 
@@ -277,6 +318,7 @@ document.querySelectorAll(".count-tab").forEach(b=>b.addEventListener("click",()
 }));
 
 document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>switchTroop(b.dataset.troop)));
+setupPresetButtons();
 
 applyGoalToTroop();
 renderGoalResult();
