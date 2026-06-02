@@ -63,6 +63,9 @@ h2,h3{margin-top:0}
 .target-block label{color:#fde68a !important;font-weight:700}
 .btn-current{width:100%;margin-top:8px;background:#166534;border-color:#22c55e;font-size:12px;padding:7px}
 .btn-target{width:100%;margin-top:8px;background:#92400e;border-color:#f59e0b;font-size:12px;padding:7px}
+/* 使い方説明リスト */
+.info-list{margin:6px 0 10px;display:flex;flex-direction:column;gap:5px}
+.info-item{font-size:13px;color:#c9a87c;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid #7c4a00;line-height:1.4}
 /* テーブルアイコン */
 .th-icon{width:16px;height:16px;vertical-align:middle;margin-right:2px;object-fit:contain}
 </style>
@@ -80,7 +83,10 @@ h2,h3{margin-top:0}
 <section>
   <div class="goal-result">
     <h3>大枠目標の必要素材</h3>
-    <div class="info">0ベースからの必要素材です。基本は1兵種分、タブで2兵種・3兵種の合計へ切替できます。</div>
+    <div class="info-list">
+  <div class="info-item">📌 Lv0から目標まで必要な素材の目安です</div>
+  <div class="info-item">⚔️ 盾・弓・槍を育てる場合は兵種数タブで切替</div>
+</div>
     <div class="count-tabs">
       <button class="count-tab active" data-count="1">1兵種</button>
       <button class="count-tab" data-count="2">2兵種</button>
@@ -90,7 +96,12 @@ h2,h3{margin-top:0}
   </div>
   <div class="total-box" style="margin-bottom:12px">
     <h3>詳細設定</h3>
-    <div class="info">スキルツリー上のマーカーをタップして、現在Lvと目標Lvを設定します。入力後は「計算する」で詳細不足分へ移動します。</div>
+    <div class="info-list">
+      <div class="info-item">📍 マーカーをタップ → 現在Lv・目標Lvを設定</div>
+      <div class="info-item">🔁 同じマーカーを再タップでキャンセル</div>
+      <div class="info-item">✅ 研究済みの段階は「カンスト済み」ボタンで一括設定</div>
+      <div class="info-item">🗡 盾・弓・槍それぞれ個別に設定できます</div>
+    </div>
   </div>
 <div class="troop-bar">
     <button class="troop active" data-troop="shield">🛡 盾兵</button>
@@ -105,7 +116,10 @@ h2,h3{margin-top:0}
 
   <div class="total-box" style="margin-top:12px">
     <h3>目標LVまでの消費アイテム数</h3>
-    <div class="info">スキルツリーで設定した現在Lvから目標Lvまでの消費アイテム数です。盾・弓・槍の合算も表示します。</div>
+    <div class="info-list">
+  <div class="info-item">📊 各兵種の現在Lv→目標Lvに必要な素材数</div>
+  <div class="info-item">➕ 合計行で盾・弓・槍の全合算を確認できます</div>
+</div>
     <div id="totalResult"></div>
   </div>
 
