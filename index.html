@@ -47,6 +47,24 @@ h2,h3{margin-top:0}
 .material-card.time-card{grid-column:1/-1}
 .quick-btn{touch-action:none;-webkit-user-select:none;user-select:none;position:absolute;transform:translate(-50%,-50%);border-radius:10px;border:2px solid #f59e0b;background:rgba(26,10,0,.88);color:#fff;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;z-index:8;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.6)}
 .quick-btn.selected{background:rgba(180,83,9,.88);border-color:#fde68a}
+/* 兵種バー */
+.troop-bar{display:flex;gap:0;margin:0 0 6px;border-radius:12px;overflow:hidden;border:2px solid #7c4a00}
+.troop-bar .troop{flex:1;border-radius:0;border:none;border-right:1px solid #7c4a00;padding:12px 4px;font-size:15px;background:#2a1400;transition:background .15s}
+.troop-bar .troop:last-child{border-right:none}
+.troop-bar .troop.active{background:#92400e;color:#fde68a;font-weight:900}
+/* エディター */
+.editor-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.editor-header h3{margin:0;color:#f59e0b;font-size:15px}
+.close-x{background:none;border:none;color:#94a3b8;font-size:20px;padding:4px 8px;cursor:pointer;border-radius:6px}
+.lv-block{padding:8px;border-radius:10px}
+.current-block{background:#0d2a0d;border:1px solid #166534}
+.current-block label{color:#86efac !important;font-weight:700}
+.target-block{background:#1a1200;border:1px solid #92400e}
+.target-block label{color:#fde68a !important;font-weight:700}
+.btn-current{width:100%;margin-top:8px;background:#166534;border-color:#22c55e;font-size:12px;padding:7px}
+.btn-target{width:100%;margin-top:8px;background:#92400e;border-color:#f59e0b;font-size:12px;padding:7px}
+/* テーブルアイコン */
+.th-icon{width:16px;height:16px;vertical-align:middle;margin-right:2px;object-fit:contain}
 </style>
 </head>
 <body>
@@ -74,10 +92,10 @@ h2,h3{margin-top:0}
     <h3>詳細設定</h3>
     <div class="info">スキルツリー上のマーカーをタップして、現在Lvと目標Lvを設定します。入力後は「計算する」で詳細不足分へ移動します。</div>
   </div>
-<div class="tree-troops">
-    <button class="troop active" data-troop="shield">盾</button>
-    <button class="troop" data-troop="bow">弓</button>
-    <button class="troop" data-troop="spear">槍</button>
+<div class="troop-bar">
+    <button class="troop active" data-troop="shield">🛡 盾兵</button>
+    <button class="troop" data-troop="bow">🏹 弓兵</button>
+    <button class="troop" data-troop="spear">🗡 槍兵</button>
   </div>
   <div class="stage">
   <div id="treeWrap">
@@ -86,29 +104,32 @@ h2,h3{margin-top:0}
 </div>
 
   <div class="total-box" style="margin-top:12px">
-    <h3>詳細設定の不足分</h3>
-    <div class="info">スキルツリーで設定した現在Lvから目標Lvまでの不足分です。盾・弓・槍の合算も表示します。</div>
+    <h3>目標LVまでの消費アイテム数</h3>
+    <div class="info">スキルツリーで設定した現在Lvから目標Lvまでの消費アイテム数です。盾・弓・槍の合算も表示します。</div>
     <div id="totalResult"></div>
   </div>
 
 </section>
 
 <div id="nodeEditor" class="node-editor">
-  <h3 id="editorTitle">研究設定</h3>
+  <div class="editor-header">
+    <h3 id="editorTitle">研究設定</h3>
+    <button id="editorCloseX" class="close-x">✕</button>
+  </div>
   <div class="editor-row">
-    <div>
-      <label>現在Lv</label>
+    <div class="lv-block current-block">
+      <label>📍 現在Lv</label>
       <select id="editorCurrent"></select>
-      <button id="editorMaxCurrent" style="width:100%;margin-top:8px">カンスト済み</button>
+      <button id="editorMaxCurrent" class="btn-current">✓ カンスト済み</button>
     </div>
-    <div>
-      <label>目標Lv</label>
+    <div class="lv-block target-block">
+      <label>🎯 目標Lv</label>
       <select id="editorTarget"></select>
-      <button id="editorMaxTarget" style="width:100%;margin-top:8px">Lv MAX</button>
+      <button id="editorMaxTarget" class="btn-target">↑ Lv MAX</button>
     </div>
   </div>
   <div class="editor-actions">
-    <button id="editorCalc">計算する</button>
+    <button id="editorCalc">📊 計算する</button>
     <button id="editorClose">続けて入力</button>
   </div>
 </div>
@@ -277,7 +298,7 @@ function renderTotalResult(){
 
   document.getElementById("totalResult").innerHTML = `
     <table class="result-table">
-      <thead><tr><th>対象</th><th>精錬火晶</th><th>火晶微粒子</th><th>鋼材</th><th>研究時間</th></tr></thead>
+      <thead><tr><th>対象</th><th><img src="refined.png" class="th-icon">精錬</th><th><img src="particle.png" class="th-icon">微粒子</th><th><img src="steel.png" class="th-icon">鋼材</th><th>⏱時間</th></tr></thead>
       <tbody>
         ${rows}
         <tr style="font-weight:900;color:#86efac"><td>合計</td><td>${fmt(total.refined)}</td><td>${fmt(total.particle)}</td><td>${fmt(total.steel)}</td><td>${fmtTime(total.time)}</td></tr>
@@ -577,6 +598,12 @@ function renderMarkers(){
     m.style.width = displaySize + "px";
     m.style.height = displaySize + "px";
     m.addEventListener("click",()=>{
+      if(selected === k && document.getElementById("nodeEditor").classList.contains("open")){
+        selected = "";
+        closeEditor();
+        renderMarkers();
+        return;
+      }
       selected = k;
       renderMarkers();
       focusRow(k);
@@ -679,6 +706,7 @@ document.querySelectorAll(".count-tab").forEach(b=>b.addEventListener("click",()
 
 document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>switchTroop(b.dataset.troop)));
 document.getElementById("editorClose").addEventListener("click", closeEditor);
+document.getElementById("editorCloseX").addEventListener("click", ()=>{ selected=""; closeEditor(); renderMarkers(); });
 document.getElementById("editorCalc").addEventListener("click", calculateAndScroll);
 setupPresetButtons();
 initQuickSelect();
