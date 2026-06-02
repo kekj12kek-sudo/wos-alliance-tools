@@ -53,7 +53,7 @@ h2,h3{margin-top:0}
 .level-row select{width:100%;padding:7px}
 @media(min-width:900px){.main{max-width:760px}.material-grid{grid-template-columns:repeat(3,1fr)}}
 
-.quick-btn{
+.quick-btn{touch-action:none;-webkit-user-select:none;user-select:none;
   position:absolute;
   transform:translate(-50%,-50%);
   border-radius:12px;
@@ -605,25 +605,44 @@ function renderQuickButtons(){
 
 function enableQuickDrag(btn){
   let dragging = false;
+
   btn.addEventListener("pointerdown", e=>{
     selectedQuick = btn.dataset.key;
     dragging = true;
+    btn.classList.add("selected");
     btn.setPointerCapture(e.pointerId);
-    renderQuickButtons();
+    syncQuickControls();
     e.preventDefault();
   });
+
   btn.addEventListener("pointermove", e=>{
     if(!dragging) return;
+
     const r = wrap.getBoundingClientRect();
     const x = ((e.clientX-r.left)/r.width)*100;
     const y = ((e.clientY-r.top)/r.height)*100;
-    quickButtonData[troop][selectedQuick].x = Math.round(Math.max(0,Math.min(100,x))*100)/100;
-    quickButtonData[troop][selectedQuick].y = Math.round(Math.max(0,Math.min(100,y))*100)/100;
-    renderQuickButtons();
+
+    const nx = Math.round(Math.max(0,Math.min(100,x))*100)/100;
+    const ny = Math.round(Math.max(0,Math.min(100,y))*100)/100;
+
+    quickButtonData[troop][selectedQuick].x = nx;
+    quickButtonData[troop][selectedQuick].y = ny;
+
+    btn.style.left = nx + "%";
+    btn.style.top = ny + "%";
+
     updateQuickJson();
   });
-  btn.addEventListener("pointerup", ()=>dragging=false);
-  btn.addEventListener("pointercancel", ()=>dragging=false);
+
+  const end = ()=>{
+    if(!dragging) return;
+    dragging = false;
+    renderQuickButtons();
+    updateQuickJson();
+  };
+
+  btn.addEventListener("pointerup", end);
+  btn.addEventListener("pointercancel", end);
 }
 
 function applyQuickAction(key){
