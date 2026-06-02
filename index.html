@@ -18,7 +18,7 @@ button.active{background:#b45309;border-color:#f59e0b}
 #treeImage{display:block;width:100%;height:auto}
 .marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(37,99,235,.20);border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;font-size:8px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;cursor:pointer;z-index:5;padding:0}
 .marker:hover,.marker.selected{background:rgba(245,158,11,.55);border-color:#fde68a}
-.node-editor{display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:100;background:#1a0a00;border:2px solid #f59e0b;border-radius:16px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.7);max-height:45vh;overflow:auto}
+.node-editor{display:none;background:#1a0a00;border:2px solid #f59e0b;border-radius:16px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.6);margin-top:8px}
 .node-editor.open{display:block}
 .node-editor h3{margin:0 0 10px;color:#f59e0b}
 .editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
@@ -75,18 +75,60 @@ h2,h3{margin-top:0}
 /* 使い方説明リスト */
 .info-list{margin:6px 0 10px;display:flex;flex-direction:column;gap:5px}
 .info-item{font-size:13px;color:#c9a87c;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid #7c4a00;line-height:1.4}
+/* 進捗バー */
+.troop-progress{width:100%;margin-top:4px}
+.progress-count{font-size:10px;color:#94a3b8;margin-bottom:2px;font-weight:600}
+.troop-shield.active .progress-count{color:#86efac}
+.troop-bow.active .progress-count{color:#fef08a}
+.troop-spear.active .progress-count{color:#93c5fd}
+.progress-bar-bg{width:100%;height:5px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden}
+.progress-bar-fill{height:100%;border-radius:4px;transition:width .3s ease}
+.troop-shield .progress-bar-fill{background:#22c55e}
+.troop-bow .progress-bar-fill{background:#eab308}
+.troop-spear .progress-bar-fill{background:#3b82f6}
 /* テーブルアイコン */
 .th-icon{width:16px;height:16px;vertical-align:middle;margin-right:2px;object-fit:contain}
 .troop-img{width:44px;height:44px;object-fit:contain}
+/* ユーザー名オーバーレイ */
+#userOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+#userOverlay.hidden{display:none}
+.user-dialog{background:#1a0a00;border:2px solid #f59e0b;border-radius:16px;padding:24px;width:100%;max-width:340px;text-align:center}
+.user-dialog h2{color:#f59e0b;margin:0 0 8px;font-size:18px}
+.user-dialog p{color:#c9a87c;font-size:13px;margin:0 0 16px;line-height:1.6}
+.user-input{width:100%;padding:12px;border-radius:10px;border:2px solid #7c4a00;background:#2a1400;color:#fff;font-size:16px;margin-bottom:12px;text-align:center;font-weight:700}
+.user-input:focus{outline:none;border-color:#f59e0b}
+.btn-start{width:100%;padding:12px;border-radius:10px;border:none;background:#92400e;color:#fde68a;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:8px;touch-action:manipulation}
+.btn-start:active{background:#b45309}
+.btn-skip{width:100%;padding:10px;border-radius:10px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;touch-action:manipulation}
+/* ヘッダーユーザー情報 */
+.header-user{display:flex;align-items:center;gap:8px;margin-left:auto}
+.header-username{color:#fde68a;font-size:13px;font-weight:700}
+.btn-user-reset{padding:5px 10px;font-size:11px;background:#4c1d1d;border:1px solid #ef4444;color:#fca5a5;border-radius:8px;cursor:pointer;touch-action:manipulation}
 </style>
 </head>
 <body>
+
+<!-- ユーザー名入力オーバーレイ -->
+<div id="userOverlay">
+  <div class="user-dialog">
+    <h2>👤 ユーザー名を入力</h2>
+    <p>入力すると設定が自動保存され<br>次回から続きから始められます<br><small style="color:#64748b">※スキップすると保存なし</small></p>
+    <input id="userNameInput" class="user-input" type="text" placeholder="例：Keisuke" maxlength="20">
+    <button class="btn-start" id="btnUserStart">✓ 記録を開始する</button>
+    <button class="btn-skip" id="btnUserSkip">保存なしで使用する</button>
+  </div>
+</div>
+
 <header>
 <strong style="width:100%;font-size:16px">T12研究ページ</strong>
 <button class="goal active" data-goal="unlock">T12解放まで</button>
 <button class="goal" data-goal="skill">スキル解放まで</button>
 <button class="goal" data-goal="capacity">容量解放まで</button>
 <button class="goal" data-goal="max">カンストまで</button>
+<div class="header-user" id="headerUser" style="display:none">
+  <span class="header-username" id="headerUsername"></span>
+  <button class="btn-user-reset" id="btnChangeUser">変更</button>
+</div>
 </header>
 
 <div class="main">
@@ -94,8 +136,9 @@ h2,h3{margin-top:0}
   <div class="goal-result">
     <h3>大枠目標の必要素材</h3>
     <div class="info-list">
-  <div class="info-item">📌 Lv0から目標まで必要な素材の目安です</div>
-  <div class="info-item">⚔️ 盾・弓・槍を育てる場合は兵種数タブで切替</div>
+  <div class="info-item">📌 盾・弓・槍を<strong>同時に同じペースで育てる</strong>場合の必要素材目安です</div>
+  <div class="info-item">🔢 兵種数タブで1〜3兵種の合計素材を切替できます</div>
+  <div class="info-item">⚠️ 兵種ごとに進捗が異なる場合は下の詳細設定をご利用ください</div>
 </div>
     <div class="count-tabs">
       <button class="count-tab active" data-count="1">1兵種</button>
@@ -107,33 +150,43 @@ h2,h3{margin-top:0}
   <div class="total-box" style="margin-bottom:12px">
     <h3>詳細設定</h3>
     <div class="info-list">
-      <div class="info-item">📍 マーカーをタップ → 現在Lv・目標Lvを設定</div>
+      <div class="info-item">🗡 盾・弓・槍の<strong>進捗がバラバラな場合</strong>はここで兵種ごとに個別設定</div>
+      <div class="info-item">📍 マーカーをタップ → 現在Lv・目標Lvを設定して不足分を計算</div>
+      <div class="info-item">✅ ツリー上の「研究済」ボタンで段階ごとに一括入力できます</div>
       <div class="info-item">🔁 同じマーカーを再タップでキャンセル</div>
-      <div class="info-item">✅ ツリー上の「研究済」ボタンで段階ごとに一括設定</div>
-      <div class="info-item">🗡 盾・弓・槍それぞれ個別に設定できます</div>
     </div>
   </div>
 <div class="troop-bar">
-    <button class="troop troop-shield active" data-troop="shield"><img src="shield_char.png" class="troop-img">🛡 盾兵</button>
-    <button class="troop troop-bow" data-troop="bow"><img src="bow_char.png" class="troop-img">🏹 弓兵</button>
-    <button class="troop troop-spear" data-troop="spear"><img src="spear_char.png" class="troop-img">⚔️ 槍兵</button>
+    <button class="troop troop-shield active" data-troop="shield">
+      <img src="shield_char.png" class="troop-img">
+      <span>🛡 盾兵</span>
+      <div class="troop-progress">
+        <div class="progress-count" id="prog-count-shield">0/15</div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar-shield" style="width:0%"></div></div>
+      </div>
+    </button>
+    <button class="troop troop-bow" data-troop="bow">
+      <img src="bow_char.png" class="troop-img">
+      <span>🏹 弓兵</span>
+      <div class="troop-progress">
+        <div class="progress-count" id="prog-count-bow">0/15</div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar-bow" style="width:0%"></div></div>
+      </div>
+    </button>
+    <button class="troop troop-spear" data-troop="spear">
+      <img src="spear_char.png" class="troop-img">
+      <span>⚔️ 槍兵</span>
+      <div class="troop-progress">
+        <div class="progress-count" id="prog-count-spear">0/15</div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar-spear" style="width:0%"></div></div>
+      </div>
+    </button>
   </div>
   <div class="stage">
   <div id="treeWrap">
     <img id="treeImage" src="S__123273220_0.jpg" alt="T12研究ツリー">
   </div>
 </div>
-
-  <div class="total-box" style="margin-top:12px">
-    <h3>目標LVまでの消費アイテム数</h3>
-    <div class="info-list">
-  <div class="info-item">📊 各兵種の現在Lv→目標Lvに必要な素材数</div>
-  <div class="info-item">➕ 合計行で盾・弓・槍の全合算を確認できます</div>
-</div>
-    <div id="totalResult"></div>
-  </div>
-
-</section>
 
 <div id="nodeEditor" class="node-editor">
   <div class="editor-header">
@@ -157,9 +210,126 @@ h2,h3{margin-top:0}
     <button id="editorClose">閉じる</button>
   </div>
 </div>
+
+  <div class="total-box" style="margin-top:8px">
+    <h3>目標LVまでの消費アイテム数</h3>
+    <div class="info-list">
+  <div class="info-item">📊 各兵種の現在Lv→目標Lvに必要な素材数</div>
+  <div class="info-item">➕ 合計行で盾・弓・槍の全合算を確認できます</div>
+</div>
+    <div id="totalResult"></div>
+  </div>
+
+</section>
 </div>
 
 <script>
+
+// =========================================================
+// ユーザー名・LocalStorage管理
+// =========================================================
+const SAVE_KEY_PREFIX = "t12_";
+let currentUser = null; // null = 保存なし
+
+function getSaveKey(){
+  return SAVE_KEY_PREFIX + currentUser;
+}
+
+function saveState(){
+  if(!currentUser) return;
+  const data = {
+    state: state,
+    troop: troop,
+    goal: goal,
+    resultTroopCount: resultTroopCount,
+    savedAt: new Date().toISOString()
+  };
+  localStorage.setItem(getSaveKey(), JSON.stringify(data));
+}
+
+function loadState(){
+  if(!currentUser) return false;
+  const raw = localStorage.getItem(getSaveKey());
+  if(!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    // stateを復元
+    ["shield","bow","spear"].forEach(t => {
+      if(data.state && data.state[t]){
+        Object.keys(nodeName).forEach(k => {
+          if(data.state[t][k]){
+            state[t][k].current = data.state[t][k].current || 0;
+            state[t][k].target  = data.state[t][k].target  || 0;
+          }
+        });
+      }
+    });
+    if(data.goal) goal = data.goal;
+    if(data.resultTroopCount) resultTroopCount = data.resultTroopCount;
+    if(data.troop) troop = data.troop;
+    return true;
+  } catch(e){ return false; }
+}
+
+function initUser(name){
+  currentUser = name.trim();
+  localStorage.setItem("t12_lastUser", currentUser);
+  document.getElementById("headerUsername").textContent = "👤 " + currentUser;
+  document.getElementById("headerUser").style.display = "flex";
+  document.getElementById("userOverlay").classList.add("hidden");
+}
+
+function startWithoutSave(){
+  currentUser = null;
+  document.getElementById("userOverlay").classList.add("hidden");
+}
+
+// ユーザー名入力ボタン
+document.getElementById("btnUserStart").addEventListener("click", () => {
+  const name = document.getElementById("userNameInput").value.trim();
+  if(!name){ document.getElementById("userNameInput").focus(); return; }
+  initUser(name);
+  const loaded = loadState();
+  // 読み込み後にUIを反映
+  applyLoadedState();
+});
+
+document.getElementById("btnUserSkip").addEventListener("click", () => {
+  startWithoutSave();
+});
+
+document.getElementById("btnChangeUser").addEventListener("click", () => {
+  document.getElementById("userNameInput").value = currentUser || "";
+  document.getElementById("userOverlay").classList.remove("hidden");
+});
+
+// Enterキーで確定
+document.getElementById("userNameInput").addEventListener("keydown", e => {
+  if(e.key === "Enter"){
+    document.getElementById("btnUserStart").click();
+  }
+});
+
+function applyLoadedState(){
+  // goal ボタン反映
+  document.querySelectorAll(".goal").forEach(x =>
+    x.classList.toggle("active", x.dataset.goal === goal)
+  );
+  // 兵種ボタン反映
+  document.querySelectorAll(".troop").forEach(x =>
+    x.classList.toggle("active", x.dataset.troop === troop)
+  );
+  // 兵種数タブ反映
+  document.querySelectorAll(".count-tab").forEach(x =>
+    x.classList.toggle("active", x.dataset.count === String(resultTroopCount))
+  );
+  // ツリー画像切り替え
+  document.getElementById("treeImage").src = imageMap[troop];
+  renderGoalResult();
+  renderTotalResult();
+  renderMarkers();
+  renderTroopProgress();
+}
 
 const ICONS = {
   refined: "refined.png",
@@ -208,6 +378,28 @@ function renderGoalResult(){
 }
 
 
+// 累積コストテーブル（Lv0=0, LvN=Lv1〜LvNの合計）
+const CUM_AB1_STEEL = [0, 15000, 30750, 47250, 64500, 82500, 101250, 120750, 141750, 164250, 188250, 213750, 240750, 269250, 299250, 330750, 363750, 398250, 434250, 471750, 510750];
+const CUM_AB1_REFINED = [0, 2, 4, 6, 8, 11, 14, 17, 20, 23, 27, 31, 35, 39, 44, 49, 54, 59, 65, 71, 77];
+const CUM_AB1_PARTICLE = [0, 16, 33, 50, 68, 87, 107, 128, 150, 174, 200, 227, 256, 286, 318, 352, 387, 424, 463, 503, 545];
+const CUM_AB1_TIME = [0, 36000, 73800, 113400, 154800, 198000, 243000, 289800, 340200, 394200, 451800, 513000, 577800, 646200, 718200, 793800, 873000, 955800, 1042200, 1132200, 1225800];
+const CUM_SK_STEEL = [0, 200000, 400000, 600000];
+const CUM_SK_REFINED = [0, 50, 100, 150];
+const CUM_SK_PARTICLE = [0, 325, 650, 975];
+const CUM_SK_TIME = [0, 1728000, 3456000, 5184000];
+const CUM_AB2_STEEL = [0, 18000, 36000, 54000, 72000, 90000, 108000, 126000, 144000, 162000, 180000, 202500, 225000, 247500, 270000, 292500, 315000, 337500, 360000, 382500, 405000, 432000, 459000, 486000, 513000, 540000, 567000, 594000, 621000, 648000, 675000, 706500, 738000, 769500, 801000, 832500, 864000, 895500, 927000, 958500, 990000, 1026000, 1062000, 1098000, 1134000, 1170000, 1206000, 1242000, 1278000, 1314000, 1350000];
+const CUM_AB2_REFINED = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 56, 62, 68, 74, 80, 86, 92, 98, 104, 110, 117, 124, 131, 138, 145, 152, 159, 166, 173, 180, 188, 196, 204, 212, 220, 228, 236, 244, 252, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360];
+const CUM_AB2_PARTICLE = [0, 75, 150, 225, 300, 375, 450, 525, 600, 675, 750, 843, 936, 1029, 1122, 1215, 1308, 1401, 1494, 1587, 1680, 1792, 1904, 2016, 2128, 2240, 2352, 2464, 2576, 2688, 2800, 2931, 3062, 3193, 3324, 3455, 3586, 3717, 3848, 3979, 4110, 4260, 4410, 4560, 4710, 4860, 5010, 5160, 5310, 5460, 5610];
+const CUM_AB2_TIME = [0, 43200, 86400, 129600, 172800, 216000, 259200, 302400, 345600, 388800, 432000, 486000, 540000, 594000, 648000, 702000, 756000, 810000, 864000, 918000, 972000, 1036800, 1101600, 1166400, 1231200, 1296000, 1360800, 1425600, 1490400, 1555200, 1620000, 1695600, 1771200, 1846800, 1922400, 1998000, 2073600, 2149200, 2224800, 2300400, 2376000, 2462400, 2548800, 2635200, 2721600, 2808000, 2894400, 2980800, 3067200, 3153600, 3240000];
+const CUM_CAP_STEEL = [0, 25000, 51250, 78750, 108750, 141250, 176250, 213750, 253750, 296250, 341250, 388750, 438750, 491250, 548750, 611250];
+const CUM_CAP_REFINED = [0, 5, 10, 15, 21, 27, 34, 41, 49, 57, 66, 75, 85, 95, 106, 118];
+const CUM_CAP_PARTICLE = [0, 75, 153, 235, 325, 422, 527, 639, 759, 886, 1021, 1163, 1313, 1471, 1643, 1830];
+const CUM_CAP_TIME = [0, 43200, 88560, 136080, 187920, 244080, 311760, 376560, 445680, 519120, 596880, 678960, 765360, 856080, 955440, 1063440];
+const CUM_AB3_STEEL = [0, 25000, 50000, 75000, 100000, 125000, 150000, 175000, 200000, 225000, 250000, 281250, 312500, 343750, 375000, 406250, 437500, 468750, 500000, 531250, 562500, 600000, 637500, 675000, 712500, 750000, 787500, 825000, 862500, 900000, 937500, 981250, 1025000, 1068750, 1112500, 1156250, 1200000, 1243750, 1287500, 1331250, 1375000, 1425000, 1475000, 1525000, 1575000, 1625000, 1675000, 1725000, 1775000, 1825000, 1875000];
+const CUM_AB3_REFINED = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 56, 62, 68, 74, 80, 86, 92, 98, 104, 110, 117, 124, 131, 138, 145, 152, 159, 166, 173, 180, 188, 196, 204, 212, 220, 228, 236, 244, 252, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360];
+const CUM_AB3_PARTICLE = [0, 125, 250, 375, 500, 625, 750, 875, 1000, 1125, 1250, 1406, 1562, 1718, 1874, 2030, 2186, 2342, 2498, 2654, 2810, 2997, 3184, 3371, 3558, 3745, 3932, 4119, 4306, 4493, 4680, 4898, 5116, 5334, 5552, 5770, 5988, 6206, 6424, 6642, 6860, 7110, 7360, 7610, 7860, 8110, 8360, 8610, 8860, 9110, 9360];
+const CUM_AB3_TIME = [0, 172800, 345600, 518400, 691200, 864000, 1036800, 1209600, 1382400, 1555200, 1728000, 1944000, 2160000, 2376000, 2592000, 2808000, 3024000, 3240000, 3456000, 3672000, 3888000, 4168800, 4449600, 4730400, 5011200, 5292000, 5572800, 5853600, 6134400, 6415200, 6696000, 6998400, 7300800, 7603200, 7905600, 8208000, 8510400, 8812800, 9115200, 9417600, 9720000, 10065600, 10411200, 10756800, 11102400, 11448000, 11793600, 12139200, 12484800, 12830400, 13176000];
+
 const COSTS = {
   unlock:       { refined:440,  particle:3080,  steel:1620000, time:0 },
   ability1_each:{ refined:77,   particle:545,   steel:510750,  time:1225800 },
@@ -218,25 +410,31 @@ const COSTS = {
 };
 
 function costForNode(key, lv){
-  lv = Number(lv) || 0;
+  lv = Math.round(Number(lv) || 0);
   if(lv <= 0) return {refined:0, particle:0, steel:0, time:0};
   if(key === "unlock"){
-    return scaleCost(COSTS.unlock, lv / 1);
+    // T12解放はLv1固定・時間なし
+    return {refined: COSTS.unlock.refined, particle: COSTS.unlock.particle, steel: COSTS.unlock.steel, time: 0};
   }
   if(key.startsWith("ability1_")){
-    return scaleCost(COSTS.ability1_each, lv / 20);
+    lv = Math.min(lv, 20);
+    return {steel: CUM_AB1_STEEL[lv], refined: CUM_AB1_REFINED[lv], particle: CUM_AB1_PARTICLE[lv], time: CUM_AB1_TIME[lv]};
   }
   if(key === "skill"){
-    return scaleCost(COSTS.skill, lv / 3);
+    lv = Math.min(lv, 3);
+    return {steel: CUM_SK_STEEL[lv], refined: CUM_SK_REFINED[lv], particle: CUM_SK_PARTICLE[lv], time: CUM_SK_TIME[lv]};
   }
   if(key.startsWith("ability2_")){
-    return scaleCost(COSTS.ability2_each, lv / 50);
+    lv = Math.min(lv, 50);
+    return {steel: CUM_AB2_STEEL[lv], refined: CUM_AB2_REFINED[lv], particle: CUM_AB2_PARTICLE[lv], time: CUM_AB2_TIME[lv]};
   }
   if(key === "capacity"){
-    return scaleCost(COSTS.capacity, lv / 15);
+    lv = Math.min(lv, 15);
+    return {steel: CUM_CAP_STEEL[lv], refined: CUM_CAP_REFINED[lv], particle: CUM_CAP_PARTICLE[lv], time: CUM_CAP_TIME[lv]};
   }
   if(key.startsWith("ability3_")){
-    return scaleCost(COSTS.ability3_each, lv / 50);
+    lv = Math.min(lv, 50);
+    return {steel: CUM_AB3_STEEL[lv], refined: CUM_AB3_REFINED[lv], particle: CUM_AB3_PARTICLE[lv], time: CUM_AB3_TIME[lv]};
   }
   return {refined:0, particle:0, steel:0, time:0};
 }
@@ -312,23 +510,33 @@ function shortageForTroop(t){
 }
 
 function renderTotalResult(){
-  const rows = ["shield","bow","spear"].map(t=>{
-    const r = shortageForTroop(t);
-    return `<tr><td>${troopName[t]}</td><td>${fmt(r.refined)}</td><td>${fmt(r.particle)}</td><td>${fmt(r.steel)}</td><td>${fmtTime(r.time)}</td></tr>`;
+  const results = ["shield","bow","spear"].map(t => shortageForTroop(t));
+  const total = {refined:0, particle:0, steel:0, time:0};
+  results.forEach(r => addCost(total, r));
+
+  // 全兵種の時間が0なら時間列を非表示
+  const showTime = results.some(r => r.time > 0) || total.time > 0;
+
+  const rows = ["shield","bow","spear"].map((t,i)=>{
+    const r = results[i];
+    const timeCell = showTime ? `<td>${r.time > 0 ? fmtTime(r.time) : "<span style='color:#475569'>ー</span>"}</td>` : "";
+    return `<tr><td>${troopName[t]}</td><td>${fmt(r.refined)}</td><td>${fmt(r.particle)}</td><td>${fmt(r.steel)}</td>${timeCell}</tr>`;
   }).join("");
 
-  const total = {refined:0, particle:0, steel:0, time:0};
-  ["shield","bow","spear"].forEach(t=>addCost(total, shortageForTroop(t)));
+  const timeHead  = showTime ? `<th>⏱時間</th>` : "";
+  const timeFoot  = showTime ? `<td>${fmtTime(total.time)}</td>` : "";
 
   document.getElementById("totalResult").innerHTML = `
     <table class="result-table">
-      <thead><tr><th>対象</th><th><img src="refined.png" class="th-icon">精錬</th><th><img src="particle.png" class="th-icon">微粒子</th><th><img src="steel.png" class="th-icon">鋼材</th><th>⏱時間</th></tr></thead>
+      <thead><tr><th>対象</th><th><img src="refined.png" class="th-icon">精錬</th><th><img src="particle.png" class="th-icon">微粒子</th><th><img src="steel.png" class="th-icon">鋼材</th>${timeHead}</tr></thead>
       <tbody>
         ${rows}
-        <tr style="font-weight:900;color:#86efac"><td>合計</td><td>${fmt(total.refined)}</td><td>${fmt(total.particle)}</td><td>${fmt(total.steel)}</td><td>${fmtTime(total.time)}</td></tr>
+        <tr style="font-weight:900;color:#86efac"><td>合計</td><td>${fmt(total.refined)}</td><td>${fmt(total.particle)}</td><td>${fmt(total.steel)}</td>${timeFoot}</tr>
       </tbody>
     </table>
   `;
+  renderTroopProgress();
+  saveState();
 }
 
 const layouts = {"shield": {"unlock": {"x": 50.11, "y": 6.99, "size": 160}, "ability1_atk": {"x": 11.56, "y": 23.97, "size": 139}, "ability1_def": {"x": 36.89, "y": 23.91, "size": 137}, "ability1_leth": {"x": 62.44, "y": 23.91, "size": 139}, "ability1_hp": {"x": 88.33, "y": 23.91, "size": 142}, "skill": {"x": 50, "y": 41.2, "size": 160}, "ability2_atk": {"x": 11.89, "y": 58.62, "size": 139}, "ability2_def": {"x": 37.11, "y": 58.56, "size": 136}, "ability2_leth": {"x": 62.56, "y": 58.68, "size": 139}, "ability2_hp": {"x": 88.22, "y": 58.56, "size": 141}, "capacity": {"x": 50.11, "y": 76.6, "size": 134}, "ability3_atk": {"x": 11.56, "y": 93.46, "size": 139}, "ability3_def": {"x": 37.11, "y": 93.27, "size": 137}, "ability3_leth": {"x": 62.67, "y": 93.46, "size": 142}, "ability3_hp": {"x": 88.33, "y": 93.46, "size": 142}}, "bow": {"unlock": {"x": 50.44, "y": 10.11, "size": 158}, "ability1_atk": {"x": 12.11, "y": 25.55, "size": 144}, "ability1_def": {"x": 37.56, "y": 25.42, "size": 147}, "ability1_leth": {"x": 62.89, "y": 25.42, "size": 143}, "ability1_hp": {"x": 88.33, "y": 25.61, "size": 149}, "skill": {"x": 50.44, "y": 42.54, "size": 158}, "ability2_atk": {"x": 12.22, "y": 59.09, "size": 141}, "ability2_def": {"x": 37.44, "y": 59.16, "size": 143}, "ability2_leth": {"x": 62.89, "y": 59.16, "size": 141}, "ability2_hp": {"x": 88, "y": 59.03, "size": 142}, "capacity": {"x": 50.22, "y": 76.08, "size": 141}, "ability3_atk": {"x": 12.11, "y": 92.45, "size": 141}, "ability3_def": {"x": 37.56, "y": 92.52, "size": 141}, "ability3_leth": {"x": 62.89, "y": 92.45, "size": 141}, "ability3_hp": {"x": 88.11, "y": 92.52, "size": 142}}, "spear": {"unlock": {"x": 49.89, "y": 10.13, "size": 160}, "ability1_atk": {"x": 12.11, "y": 26.58, "size": 143}, "ability1_def": {"x": 37.11, "y": 26.51, "size": 143}, "ability1_leth": {"x": 61.89, "y": 26.51, "size": 144}, "ability1_hp": {"x": 87.67, "y": 26.58, "size": 143}, "skill": {"x": 49.78, "y": 44.65, "size": 160}, "ability2_atk": {"x": 12.11, "y": 61.22, "size": 144}, "ability2_def": {"x": 37.11, "y": 61.16, "size": 144}, "ability2_leth": {"x": 61.56, "y": 61.28, "size": 144}, "ability2_hp": {"x": 87.44, "y": 61.28, "size": 144}, "capacity": {"x": 49.56, "y": 78.42, "size": 144}, "ability3_atk": {"x": 12.11, "y": 93.24, "size": 144}, "ability3_def": {"x": 37, "y": 93.18, "size": 144}, "ability3_leth": {"x": 61.78, "y": 93.18, "size": 144}, "ability3_hp": {"x": 87.44, "y": 93.05, "size": 144}}};
@@ -641,6 +849,27 @@ function renderTable(){
   renderTotalResult();
 }
 
+function renderTroopProgress(){
+  // 全ノードのMAX合計（current基準の達成率）
+  const nodeKeys = Object.keys(nodeName);
+  const totalMaxLv = nodeKeys.reduce((s,k) => s + maxLv[k], 0); // 全ノードMAX合計
+
+  ["shield","bow","spear"].forEach(t=>{
+    const s = state[t];
+    // 設定済みノード数（currentが1以上のノード数）
+    const settledNodes = nodeKeys.filter(k => s[k].current > 0).length;
+    const totalNodes = nodeKeys.length; // 15
+    // 達成率 = 現在Lv合計 / MAX合計
+    const curSum = nodeKeys.reduce((sum,k) => sum + (s[k].current||0), 0);
+    const pct = Math.round(curSum / totalMaxLv * 100);
+
+    const countEl = document.getElementById("prog-count-"+t);
+    const barEl   = document.getElementById("prog-bar-"+t);
+    if(countEl) countEl.textContent = settledNodes + "/" + totalNodes + " (" + pct + "%)";
+    if(barEl)   barEl.style.width = pct + "%";
+  });
+}
+
 function focusRow(k){
   selected = k;
   renderMarkers();
@@ -743,10 +972,18 @@ document.getElementById("editorCalc").addEventListener("click", calculateAndScro
 setupPresetButtons();
 initQuickSelect();
 
-renderGoalResult();
-renderTotalResult();
-renderTable();
-renderMarkers();
+// 前回ユーザーが存在すれば自動ロード＆反映
+const lastUser = localStorage.getItem("t12_lastUser");
+if(lastUser){
+  initUser(lastUser);
+  loadState();
+  applyLoadedState();
+} else {
+  renderGoalResult();
+  renderTotalResult();
+  renderTable();
+  renderMarkers();
+}
 window.addEventListener("resize", renderMarkers);
 document.getElementById("treeImage").addEventListener("load", renderMarkers);
 </script>
