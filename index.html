@@ -17,6 +17,14 @@ button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#1
 .marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(37,99,235,.22);border:3px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;font-size:10px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;cursor:pointer;z-index:5}
 .marker:hover,.marker.selected{background:rgba(245,158,11,.42);border-color:#fde68a}
 .side{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px}
+.node-editor{display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100;background:#0f172a;border:2px solid #f59e0b;border-radius:16px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.45);width:min(92vw,420px)}
+.node-editor.open{display:block}
+.node-editor h3{margin:0 0 10px}
+.editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.editor-row label{display:block;color:#cbd5e1;font-size:12px;margin-bottom:4px}
+.editor-row select{width:100%}
+.editor-actions{display:flex;gap:8px;justify-content:flex-end}
+.editor-actions button{padding:8px 12px}
 h2,h3{margin-top:0}
 .info{color:#cbd5e1;line-height:1.6;font-size:14px}
 .goal-result{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:12px}
@@ -72,7 +80,7 @@ h2,h3{margin-top:0}
 
 <aside class="side">
   <h2 id="title">盾の研究設定</h2>
-  <p class="info">マーカーをタップすると該当項目のレベル設定へ移動します。現在Lvと目標Lvを細かく選べます。</p>
+  <p class="info">スキルツリー上のマーカーをタップすると、その項目だけ設定できます。全項目の常時表示はしません。</p>
   <div id="goalSummary" class="info" style="background:#111827;border:1px solid #334155;border-radius:10px;padding:10px;margin-bottom:10px"></div>
 
   <div class="info" style="font-weight:900;margin-bottom:4px">現在の研究状況を簡単設定</div>
@@ -89,9 +97,25 @@ h2,h3{margin-top:0}
     <button class="preset-btn target-set" data-target="skill">スキル解放まで</button>
     <button class="preset-btn target-set" data-target="max">カンストまで</button>
   </div>
-
-  <div id="levelTable"></div>
 </aside>
+
+<div id="nodeEditor" class="node-editor">
+  <h3 id="editorTitle">研究設定</h3>
+  <div class="editor-row">
+    <div>
+      <label>現在Lv</label>
+      <select id="editorCurrent"></select>
+    </div>
+    <div>
+      <label>目標Lv</label>
+      <select id="editorTarget"></select>
+    </div>
+  </div>
+  <div class="editor-actions">
+    <button id="editorMaxCurrent">現在をMAX</button>
+    <button id="editorClose">閉じる</button>
+  </div>
+</div>
 </div>
 
 <script>
@@ -262,34 +286,42 @@ function renderTable(){
   document.getElementById("title").textContent = troopName[troop] + "の研究設定";
   document.getElementById("goalSummary").innerHTML =
     "選択中の大枠目標：<b>" + goalLabel[goal] + "</b><br>" +
-    "現在Lvは手動、目標Lvは大枠ボタンで一括反映できます。";
-  const box = document.getElementById("levelTable");
-  box.innerHTML = `
-    <div class="level-row" style="font-weight:900;color:#cbd5e1">
-      <label>研究項目</label><div>現在Lv</div><div>目標Lv</div>
-    </div>
-  ` + Object.keys(nodeName).map(k=>`
-    <div class="level-row" data-row="${k}">
-      <label>${nodeName[k]}</label>
-      <select data-type="current" data-key="${k}">${makeOptions(maxLv[k])}</select>
-      <select data-type="target" data-key="${k}">${makeOptions(maxLv[k])}</select>
-    </div>
-  `).join("");
-
-  document.querySelectorAll("#levelTable select").forEach(sel=>{
-    const key = sel.dataset.key;
-    const type = sel.dataset.type;
-    sel.value = state[troop][key][type];
-    sel.addEventListener("change", e=>{
-      state[troop][key][type] = Number(e.target.value);
-    });
-  });
+    "マーカーをタップして、必要な項目だけ現在Lv・目標Lvを設定します。";
 }
 
 function focusRow(k){
-  document.querySelectorAll(".level-row").forEach(r=>r.classList.toggle("active", r.dataset.row===k));
-  const row = document.querySelector(`[data-row="${k}"]`);
-  if(row) row.scrollIntoView({behavior:"smooth",block:"center"});
+  selected = k;
+  renderMarkers();
+  openEditor(k);
+}
+
+
+function makeEditorOptions(max, value){
+  let s = "";
+  for(let i=0;i<=max;i++){
+    s += `<option value="${i}" ${i===value ? "selected" : ""}>Lv${i}${i===0 ? "（未解放）" : ""}</option>`;
+  }
+  return s;
+}
+
+function openEditor(k){
+  const editor = document.getElementById("nodeEditor");
+  document.getElementById("editorTitle").textContent = nodeName[k];
+  const cur = document.getElementById("editorCurrent");
+  const tar = document.getElementById("editorTarget");
+  cur.innerHTML = makeEditorOptions(maxLv[k], state[troop][k].current);
+  tar.innerHTML = makeEditorOptions(maxLv[k], state[troop][k].target);
+  cur.onchange = e => { state[troop][k].current = Number(e.target.value); };
+  tar.onchange = e => { state[troop][k].target = Number(e.target.value); };
+  document.getElementById("editorMaxCurrent").onclick = () => {
+    state[troop][k].current = maxLv[k];
+    openEditor(k);
+  };
+  editor.classList.add("open");
+}
+
+function closeEditor(){
+  document.getElementById("nodeEditor").classList.remove("open");
 }
 
 function switchTroop(t){
@@ -299,7 +331,7 @@ function switchTroop(t){
   document.querySelectorAll(".troop").forEach(b=>b.classList.toggle("active", b.dataset.troop===troop));
   renderTable();
   renderMarkers();
-  focusRow(selected);
+  closeEditor();
 }
 
 document.querySelectorAll(".goal").forEach(b=>b.addEventListener("click",()=>{
@@ -318,13 +350,13 @@ document.querySelectorAll(".count-tab").forEach(b=>b.addEventListener("click",()
 }));
 
 document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>switchTroop(b.dataset.troop)));
+document.getElementById("editorClose").addEventListener("click", closeEditor);
 setupPresetButtons();
 
 applyGoalToTroop();
 renderGoalResult();
 renderTable();
 renderMarkers();
-focusRow(selected);
 </script>
 </body>
 </html>
