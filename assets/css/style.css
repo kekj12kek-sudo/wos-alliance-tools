@@ -49,3 +49,28 @@
   font-weight: 800;
 }
 
+
+
+.tree-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 560px;
+  object-fit: contain;
+  background: #0f1422;
+}
+
+.tree-box {
+  min-height: auto;
+}
+
+.node {
+  z-index: 3;
+}
+
+@media(max-width:820px){
+  .tree-image {
+    min-height: 460px;
+  }
+}
+

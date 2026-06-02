@@ -122,6 +122,30 @@ function setupCalibrationButtons(){
   }
 }
 
+
+const TROOP_IMAGES = {
+  shield: "../assets/images/shield_tree.jpeg",
+  spear: "../assets/images/spear_tree.jpeg",
+  bow: "../assets/images/bow_tree.jpeg"
+};
+
+function updateTreeImage(){
+  const img = document.getElementById("treeImage");
+  const ph = document.getElementById("treePlaceholder");
+  if(!img) return;
+  img.src = TROOP_IMAGES[selectedTroop] || TROOP_IMAGES.shield;
+  img.onerror = () => {
+    img.classList.add("hidden");
+    if(ph) ph.classList.remove("hidden");
+  };
+  img.onload = () => {
+    img.classList.remove("hidden");
+    if(ph) ph.classList.add("hidden");
+    applyMarkerSize();
+    applyNodePositions();
+  };
+}
+
 const GOALS = {
   unlock: { name: "T12兵解放", steel: 1620000, refined: 440, particle: 3080, meat: 0, wood: 0, coal: 0, iron: 0, time: 0 },
   skill:  { name: "スキルまで解放", steel: 4263000, refined: 898, particle: 6235, meat: 112440000, wood: 112440000, coal: 22560000, iron: 5634000, time: 0 },
@@ -250,6 +274,7 @@ function setTroopButtons(){
     b.addEventListener("click", ()=>{
       selectedTroop = b.dataset.troop;
       document.querySelectorAll(".troop-btn").forEach(x=>x.classList.toggle("active", x.dataset.troop === selectedTroop));
+      updateTreeImage();
       renderLevelTable();
       renderDetail();
     });
@@ -335,6 +360,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   setGoalButtons();
   setTroopButtons();
   setCurrentPresetButtons();
+  updateTreeImage();
   applyMarkerSize();
   applyNodePositions();
   setupNodeDragging();
