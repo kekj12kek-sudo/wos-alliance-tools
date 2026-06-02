@@ -17,7 +17,7 @@ button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#1
 .marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(37,99,235,.20);border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;font-size:8px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;cursor:pointer;z-index:5;padding:0}
 .marker:hover,.marker.selected{background:rgba(245,158,11,.42);border-color:#fde68a}
 .side{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;margin-top:12px}
-.node-editor{display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:100;background:#0f172a;border:2px solid #f59e0b;border-radius:16px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);width:auto;max-height:45vh;overflow:auto}
+.node-editor{display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:100;background:#0f172a;border:2px solid #22c55e;border-radius:16px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);width:auto;max-height:45vh;overflow:auto}
 .node-editor.open{display:block}
 .node-editor h3{margin:0 0 10px}
 .editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
@@ -57,8 +57,8 @@ h2,h3{margin-top:0}
   position:absolute;
   transform:translate(-50%,-50%);
   border-radius:12px;
-  border:2px solid #f59e0b;
-  background:rgba(15,23,42,.88);
+  border:2px solid #22c55e;
+  background:rgba(22,101,52,.86);
   color:#fff;
   font-weight:900;
   font-size:12px;
@@ -68,46 +68,15 @@ h2,h3{margin-top:0}
   text-align:center;
   line-height:1.1;
   z-index:8;
-  cursor:move;
+  cursor:pointer;
   user-select:none;
   touch-action:none;
   box-shadow:0 4px 12px rgba(0,0,0,.45);
 }
-.quick-btn.selected{
+.quick-btn.selected{background:rgba(245,158,11,.88);border-color:#fde68a;
   background:rgba(245,158,11,.82);
   border-color:#fde68a;
 }
-.adjust-panel{
-  background:#0b1220;
-  border:1px solid #334155;
-  border-radius:12px;
-  padding:12px;
-  margin:12px 0;
-}
-.adjust-grid{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:10px;
-}
-.adjust-grid label{
-  color:#cbd5e1;
-  font-size:13px;
-}
-.adjust-grid input,.adjust-grid select{
-  width:100%;
-}
-.coord-output{
-  width:100%;
-  min-height:120px;
-  background:#020617;
-  color:#86efac;
-  border:1px solid #334155;
-  border-radius:10px;
-  padding:8px;
-  font-size:12px;
-  font-family:Consolas,monospace;
-}
-
 </style>
 </head>
 <body>
@@ -134,21 +103,7 @@ h2,h3{margin-top:0}
     <h3>詳細設定</h3>
     <div class="info">スキルツリー上のマーカーをタップして、現在Lvと目標Lvを設定します。入力後は「計算する」で詳細不足分へ移動します。</div>
   </div>
-
-  <div class="adjust-panel">
-    <h3>追加ボタン位置調整</h3>
-    <div class="info">新規追加の横長ボタン4つだけ位置調整します。サイズは確定値で固定、既存の丸マーカーは変更しません。</div>
-    <div class="adjust-grid">
-      <label>調整するボタン
-        <select id="quickSelect"></select>
-      </label>
-      <div class="info">サイズは確定値で固定。ドラッグで位置だけ微調整できます。</div>
-      <button id="copyQuickJson">追加ボタン座標をコピー</button>
-      <textarea id="quickJson" class="coord-output" readonly></textarea>
-    </div>
-  </div>
-
-  <div class="tree-troops">
+<div class="tree-troops">
     <button class="troop active" data-troop="shield">盾</button>
     <button class="troop" data-troop="bow">弓</button>
     <button class="troop" data-troop="spear">槍</button>
@@ -463,87 +418,91 @@ const img = document.getElementById("treeImage");
 
 
 const quickButtonName = {
-  ability1_max: "能力Ⅰ\\nカンスト",
-  skill_max: "スキル\\nカンスト",
-  ability2_max: "能力Ⅱ\\nカンスト",
-  capacity_max: "容量\\nカンスト"
+  ability1_max: "✓ 能力Ⅰ
+研究済",
+  skill_max: "✓ スキル
+研究済",
+  ability2_max: "✓ 能力Ⅱ
+研究済",
+  capacity_max: "✓ 容量
+研究済"
 };
 
 const quickButtonData = {
   "shield": {
     "ability1_max": {
-      "x": 50,
-      "y": 32,
+      "x": 49.66,
+      "y": 32.55,
       "w": 82,
       "h": 35
     },
     "skill_max": {
-      "x": 50,
-      "y": 49,
+      "x": 50.07,
+      "y": 49.96,
       "w": 80,
       "h": 36
     },
     "ability2_max": {
-      "x": 50,
-      "y": 67,
+      "x": 49.93,
+      "y": 67.53,
       "w": 80,
       "h": 35
     },
     "capacity_max": {
-      "x": 50,
-      "y": 84,
+      "x": 49.93,
+      "y": 84.48,
       "w": 80,
       "h": 32
     }
   },
   "bow": {
     "ability1_max": {
-      "x": 50,
-      "y": 33,
+      "x": 50.21,
+      "y": 34.18,
       "w": 80,
       "h": 33
     },
     "skill_max": {
-      "x": 50,
-      "y": 50,
+      "x": 50.21,
+      "y": 50.63,
       "w": 80,
       "h": 33
     },
     "ability2_max": {
-      "x": 50,
-      "y": 67,
+      "x": 50.07,
+      "y": 67.62,
       "w": 80,
       "h": 35
     },
     "capacity_max": {
-      "x": 50,
-      "y": 84,
+      "x": 50.34,
+      "y": 84.14,
       "w": 80,
       "h": 35
     }
   },
   "spear": {
     "ability1_max": {
-      "x": 50,
-      "y": 34,
+      "x": 49.93,
+      "y": 35.55,
       "w": 80,
       "h": 34
     },
     "skill_max": {
-      "x": 50,
-      "y": 52,
+      "x": 49.79,
+      "y": 52.53,
       "w": 80,
       "h": 30
     },
     "ability2_max": {
-      "x": 50,
-      "y": 69,
+      "x": 49.79,
+      "y": 70.36,
       "w": 80,
       "h": 32
     },
     "capacity_max": {
-      "x": 50,
-      "y": 85,
+      "x": 49.79,
+      "y": 85.4,
       "w": 80,
       "h": 30
     }
@@ -552,97 +511,44 @@ const quickButtonData = {
 
 let selectedQuick = "ability1_max";
 
-function initQuickSelect(){
-  const sel = document.getElementById("quickSelect");
-  if(!sel) return;
-  sel.innerHTML = Object.keys(quickButtonName).map(k =>
-    `<option value="${k}">${quickButtonName[k].replace("\\n"," ")}</option>`
-  ).join("");
-  sel.value = selectedQuick;
-  sel.addEventListener("change", e=>{
-    selectedQuick = e.target.value;
-    renderQuickButtons();
-    syncQuickControls();
-  });
+function initQuickSelect(){}
 
+function syncQuickControls(){}
 
-  document.getElementById("copyQuickJson").addEventListener("click", async()=>{
-    updateQuickJson();
-    await navigator.clipboard.writeText(document.getElementById("quickJson").value);
-    alert("コピー完了");
-  });
-}
-
-function syncQuickControls(){
-  const sel = document.getElementById("quickSelect");
-  if(sel) sel.value = selectedQuick;
-  updateQuickJson();
-}
-
-function updateQuickJson(){
-  const out = document.getElementById("quickJson");
-  if(!out) return;
-  out.value = JSON.stringify({[troop]: quickButtonData[troop]}, null, 2);
-}
+function updateQuickJson(){}
 
 function renderQuickButtons(){
   document.querySelectorAll(".quick-btn").forEach(x=>x.remove());
   Object.keys(quickButtonName).forEach(k=>{
     const d = quickButtonData[troop][k];
     const b = document.createElement("button");
-    b.className = "quick-btn" + (k===selectedQuick ? " selected" : "");
+    b.className = "quick-btn" + (isQuickApplied(k) ? " selected" : "");
     b.dataset.key = k;
-    b.innerText = quickButtonName[k].replace("\\n", "\n");
+    b.innerText = quickButtonName[k].replace("\n", "
+");
     b.style.left = d.x + "%";
     b.style.top = d.y + "%";
     b.style.width = d.w + "px";
     b.style.height = d.h + "px";
-    enableQuickDrag(b);
+    b.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      applyQuickAction(k);
+      renderQuickButtons();
+    });
     wrap.appendChild(b);
   });
-  syncQuickControls();
 }
 
-function enableQuickDrag(btn){
-  let dragging = false;
+function enableQuickDrag(btn){}
 
-  btn.addEventListener("pointerdown", e=>{
-    selectedQuick = btn.dataset.key;
-    dragging = true;
-    btn.classList.add("selected");
-    btn.setPointerCapture(e.pointerId);
-    syncQuickControls();
-    e.preventDefault();
-  });
-
-  btn.addEventListener("pointermove", e=>{
-    if(!dragging) return;
-
-    const r = wrap.getBoundingClientRect();
-    const x = ((e.clientX-r.left)/r.width)*100;
-    const y = ((e.clientY-r.top)/r.height)*100;
-
-    const nx = Math.round(Math.max(0,Math.min(100,x))*100)/100;
-    const ny = Math.round(Math.max(0,Math.min(100,y))*100)/100;
-
-    quickButtonData[troop][selectedQuick].x = nx;
-    quickButtonData[troop][selectedQuick].y = ny;
-
-    btn.style.left = nx + "%";
-    btn.style.top = ny + "%";
-
-    updateQuickJson();
-  });
-
-  const end = ()=>{
-    if(!dragging) return;
-    dragging = false;
-    renderQuickButtons();
-    updateQuickJson();
+function isQuickApplied(key){
+  const map = {
+    ability1_max:["ability1_atk","ability1_def","ability1_leth","ability1_hp"],
+    skill_max:["skill"],
+    ability2_max:["ability2_atk","ability2_def","ability2_leth","ability2_hp"],
+    capacity_max:["capacity"]
   };
-
-  btn.addEventListener("pointerup", end);
-  btn.addEventListener("pointercancel", end);
+  return (map[key] || []).every(n => state[troop][n].current >= maxLv[n]);
 }
 
 function applyQuickAction(key){
@@ -652,12 +558,14 @@ function applyQuickAction(key){
     ability2_max:["ability2_atk","ability2_def","ability2_leth","ability2_hp"],
     capacity_max:["capacity"]
   };
-  (map[key] || []).forEach(n=>{
-    state[troop][n].current = maxLv[n];
-    state[troop][n].target = maxLv[n];
+  const keys = map[key] || [];
+  const already = isQuickApplied(key);
+
+  keys.forEach(n=>{
+    state[troop][n].current = already ? 0 : maxLv[n];
   });
+
   normalizePrereqFor("current");
-  normalizePrereqFor("target");
   renderTotalResult();
 }
 
