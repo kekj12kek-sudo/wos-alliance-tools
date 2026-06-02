@@ -9,7 +9,7 @@
 body{margin:0;background:#111827;color:#fff;font-family:Arial,"Yu Gothic",Meiryo,sans-serif}
 header{position:sticky;top:0;z-index:20;background:#182235;border-bottom:1px solid #334155;padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 button,select{padding:9px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:700}
-button.active{background:#b45309;border-color:#f59e0b}
+button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#166534;border-color:#22c55e}
 .main{display:grid;grid-template-columns:minmax(360px,1fr) 420px;gap:12px;padding:12px}
 .stage{background:#0b1220;border:1px solid #334155;border-radius:12px;overflow:auto;padding:8px}
 #treeWrap{position:relative;display:inline-block;line-height:0}
@@ -32,6 +32,10 @@ h2,h3{margin-top:0}
 <button class="troop active" data-troop="shield">盾</button>
 <button class="troop" data-troop="bow">弓</button>
 <button class="troop" data-troop="spear">槍</button>
+<span style="width:1px;height:28px;background:#475569;display:inline-block"></span>
+<button class="goal active" data-goal="unlock">T12解放まで</button>
+<button class="goal" data-goal="skill">スキル解放まで</button>
+<button class="goal" data-goal="max">カンストまで</button>
 </header>
 
 <div class="main">
@@ -43,7 +47,8 @@ h2,h3{margin-top:0}
 
 <aside class="side">
   <h2 id="title">盾の研究設定</h2>
-  <p class="info">マーカーをタップすると該当項目へ移動します。ここから現在Lv・目標Lvを設定できる形に進めます。</p>
+  <p class="info">大枠目標を選ぶと、目標Lvが一括で入ります。マーカーをタップすると該当項目へ移動します。</p>
+  <div id="goalSummary" class="info" style="background:#111827;border:1px solid #334155;border-radius:10px;padding:10px;margin-bottom:10px"></div>
   <div id="levelTable"></div>
 </aside>
 </div>
@@ -81,6 +86,58 @@ const maxLv = {
 };
 let troop = "shield";
 let selected = "unlock";
+let goal = "unlock";
+const state = {
+  shield: makeState(),
+  bow: makeState(),
+  spear: makeState()
+};
+
+function makeState(){
+  const s = {};
+  Object.keys(nodeName).forEach(k => s[k] = { current:0, target:0 });
+  return s;
+}
+
+const goalPreset = {
+  unlock: {
+    unlock:1,
+    ability1_atk:0, ability1_def:0, ability1_leth:0, ability1_hp:0,
+    skill:0,
+    ability2_atk:0, ability2_def:0, ability2_leth:0, ability2_hp:0,
+    capacity:0,
+    ability3_atk:0, ability3_def:0, ability3_leth:0, ability3_hp:0
+  },
+  skill: {
+    unlock:1,
+    ability1_atk:20, ability1_def:20, ability1_leth:20, ability1_hp:20,
+    skill:3,
+    ability2_atk:0, ability2_def:0, ability2_leth:0, ability2_hp:0,
+    capacity:0,
+    ability3_atk:0, ability3_def:0, ability3_leth:0, ability3_hp:0
+  },
+  max: {
+    unlock:1,
+    ability1_atk:20, ability1_def:20, ability1_leth:20, ability1_hp:20,
+    skill:3,
+    ability2_atk:50, ability2_def:50, ability2_leth:50, ability2_hp:50,
+    capacity:15,
+    ability3_atk:50, ability3_def:50, ability3_leth:50, ability3_hp:50
+  }
+};
+
+const goalLabel = {
+  unlock: "T12解放まで",
+  skill: "スキル解放まで",
+  max: "カンストまで"
+};
+
+function applyGoalToTroop(){
+  const preset = goalPreset[goal];
+  Object.keys(preset).forEach(k => {
+    state[troop][k].target = preset[k];
+  });
+}
 const wrap = document.getElementById("treeWrap");
 const img = document.getElementById("treeImage");
 
@@ -114,14 +171,30 @@ function renderMarkers(){
 
 function renderTable(){
   document.getElementById("title").textContent = troopName[troop] + "の研究設定";
+  document.getElementById("goalSummary").innerHTML =
+    "選択中の大枠目標：<b>" + goalLabel[goal] + "</b><br>" +
+    "現在Lvは手動、目標Lvは大枠ボタンで一括反映できます。";
   const box = document.getElementById("levelTable");
-  box.innerHTML = Object.keys(nodeName).map(k=>`
+  box.innerHTML = `
+    <div class="level-row" style="font-weight:900;color:#cbd5e1">
+      <label>研究項目</label><div>現在Lv</div><div>目標Lv</div>
+    </div>
+  ` + Object.keys(nodeName).map(k=>`
     <div class="level-row" data-row="${k}">
       <label>${nodeName[k]}</label>
-      <select>${makeOptions(maxLv[k])}</select>
-      <select>${makeOptions(maxLv[k])}</select>
+      <select data-type="current" data-key="${k}">${makeOptions(maxLv[k])}</select>
+      <select data-type="target" data-key="${k}">${makeOptions(maxLv[k])}</select>
     </div>
   `).join("");
+
+  document.querySelectorAll("#levelTable select").forEach(sel=>{
+    const key = sel.dataset.key;
+    const type = sel.dataset.type;
+    sel.value = state[troop][key][type];
+    sel.addEventListener("change", e=>{
+      state[troop][key][type] = Number(e.target.value);
+    });
+  });
 }
 
 function focusRow(k){
@@ -140,7 +213,17 @@ function switchTroop(t){
   focusRow(selected);
 }
 
+document.querySelectorAll(".goal").forEach(b=>b.addEventListener("click",()=>{
+  goal = b.dataset.goal;
+  document.querySelectorAll(".goal").forEach(x=>x.classList.toggle("active", x.dataset.goal===goal));
+  applyGoalToTroop();
+  renderTable();
+  focusRow(selected);
+}));
+
 document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>switchTroop(b.dataset.troop)));
+
+applyGoalToTroop();
 renderTable();
 renderMarkers();
 focusRow(selected);
