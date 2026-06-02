@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>T12研究ページ</title>
+<title>1648 T12 Planner</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:#1a0a00;color:#fff;font-family:Arial,"Yu Gothic",Meiryo,sans-serif;font-size:15px}
@@ -18,8 +18,11 @@ button.active{background:#b45309;border-color:#f59e0b}
 #treeImage{display:block;width:100%;height:auto}
 .marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(37,99,235,.20);border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;font-size:8px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;cursor:pointer;z-index:5;padding:0}
 .marker:hover,.marker.selected{background:rgba(245,158,11,.55);border-color:#fde68a}
-.node-editor{display:none;background:#1a0a00;border:2px solid #f59e0b;border-radius:16px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.6);margin-top:8px}
+.node-editor{display:none;position:fixed;z-index:200;background:#1a0a00;border:2px solid #f59e0b;border-radius:16px;padding:12px;box-shadow:0 8px 40px rgba(0,0,0,.8);width:300px;max-width:calc(100vw - 16px)}
 .node-editor.open{display:block}
+/* ポップアップ外タップで閉じるオーバーレイ */
+#editorOverlay{display:none;position:fixed;inset:0;z-index:199}
+#editorOverlay.open{display:block}
 .node-editor h3{margin:0 0 10px;color:#f59e0b}
 .editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .editor-row label{display:block;color:#fcd9a0;font-size:12px;margin-bottom:4px}
@@ -89,6 +92,30 @@ h2,h3{margin-top:0}
 /* テーブルアイコン */
 .th-icon{width:16px;height:16px;vertical-align:middle;margin-right:2px;object-fit:contain}
 .troop-img{width:44px;height:44px;object-fit:contain}
+/* 手持ち素材入力 */
+.stock-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.stock-card{background:#1e0d00;border:1px solid #7c4a00;border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+.stock-card input{background:#0d0600;border:1px solid #7c4a00;border-radius:8px;color:#fff;font-size:15px;font-weight:700;padding:4px 6px;width:100%;text-align:right;min-width:0}
+.stock-card input:focus{outline:none;border-color:#f59e0b}
+.stock-card .label{color:#c9a87c;font-size:11px;white-space:nowrap}
+.stock-card.time-card{grid-column:1/-1}
+/* 不足数ハイライト */
+.shortage{color:#f87171;font-weight:900}
+.surplus{color:#86efac}
+/* 警告バッジ */
+.warn-badge{display:inline-block;background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-size:10px;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle}
+/* 兵種リセットボタン */
+.troop-reset-bar{display:flex;gap:6px;margin:6px 0 0}
+.btn-troop-reset{flex:1;padding:6px 4px;font-size:11px;background:#4c1d1d;border:1px solid #ef4444;color:#fca5a5;border-radius:8px;cursor:pointer;touch-action:manipulation}
+/* エクスポートボタン */
+.btn-export{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;touch-action:manipulation}
+.btn-export:active{background:#1e293b}
+/* 多言語 */
+.lang-btn{padding:5px 10px;font-size:11px;border-radius:8px;border:1px solid #475569;background:#1e293b;color:#94a3b8;cursor:pointer;touch-action:manipulation}
+.lang-btn.active{border-color:#f59e0b;color:#fde68a;background:#2a1400}
+/* ポップアップサマリー */
+.editor-summary{font-size:12px;color:#94a3b8;margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,.05);border-radius:8px}
+.editor-summary .warn-text{color:#f87171}
 /* ユーザー名オーバーレイ */
 #userOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
 #userOverlay.hidden{display:none}
@@ -119,12 +146,44 @@ h2,h3{margin-top:0}
   </div>
 </div>
 
+<!-- エディターオーバーレイ（外タップで閉じる） -->
+<div id="editorOverlay"></div>
+
+<!-- マーカーポップアップエディター -->
+<div id="nodeEditor" class="node-editor">
+  <div class="editor-header">
+    <h3 id="editorTitle">研究設定</h3>
+    <button id="editorCloseX" class="close-x">✕</button>
+  </div>
+  <div class="editor-summary" id="editorSummary"></div>
+  <div class="editor-row">
+    <div class="lv-block current-block">
+      <label>📍 現在Lv</label>
+      <select id="editorCurrent"></select>
+      <button id="editorMaxCurrent" class="btn-current">✓ カンスト済み</button>
+    </div>
+    <div class="lv-block target-block">
+      <label>🎯 目標Lv</label>
+      <select id="editorTarget"></select>
+      <button id="editorMaxTarget" class="btn-target">↑ Lv MAX</button>
+    </div>
+  </div>
+  <div class="editor-actions">
+    <button id="editorCalc">📊 計算する</button>
+    <button id="editorClose">閉じる</button>
+  </div>
+</div>
+
 <header>
-<strong style="width:100%;font-size:16px">T12研究ページ</strong>
+<strong style="width:100%;font-size:16px">1648 T12 Planner</strong>
 <button class="goal active" data-goal="unlock">T12解放まで</button>
 <button class="goal" data-goal="skill">スキル解放まで</button>
 <button class="goal" data-goal="capacity">容量解放まで</button>
 <button class="goal" data-goal="max">カンストまで</button>
+<div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+  <button class="lang-btn active" data-lang="ja">JP</button>
+  <button class="lang-btn" data-lang="en">EN</button>
+</div>
 <div class="header-user" id="headerUser" style="display:none">
   <span class="header-username" id="headerUsername"></span>
   <button class="btn-user-reset" id="btnChangeUser">変更</button>
@@ -146,6 +205,14 @@ h2,h3{margin-top:0}
       <button class="count-tab" data-count="3">3兵種</button>
     </div>
     <div id="goalResult"></div>
+    <div style="margin-top:10px">
+      <div style="font-size:13px;color:#f59e0b;font-weight:700;margin-bottom:4px">📦 手持ち素材を入力（不足数を自動計算）</div>
+      <div class="stock-grid">
+        <div class="stock-card"><img class="material-icon" src="refined.png"><div style="flex:1"><div class="label">精錬火晶</div><input id="stock-refined" type="number" min="0" placeholder="0"></div></div>
+        <div class="stock-card"><img class="material-icon" src="particle.png"><div style="flex:1"><div class="label">火晶微粒子</div><input id="stock-particle" type="number" min="0" placeholder="0"></div></div>
+        <div class="stock-card time-card"><img class="material-icon" src="steel.png"><div style="flex:1"><div class="label">鋼材</div><input id="stock-steel" type="number" min="0" placeholder="0"></div></div>
+      </div>
+    </div>
   </div>
   <div class="total-box" style="margin-bottom:12px">
     <h3>詳細設定</h3>
@@ -155,6 +222,11 @@ h2,h3{margin-top:0}
       <div class="info-item">✅ ツリー上の「研究済」ボタンで段階ごとに一括入力できます</div>
       <div class="info-item">🔁 同じマーカーを再タップでキャンセル</div>
     </div>
+  </div>
+  <div class="troop-reset-bar">
+    <button class="btn-troop-reset" data-reset="shield">🛡 盾リセット</button>
+    <button class="btn-troop-reset" data-reset="bow">🏹 弓リセット</button>
+    <button class="btn-troop-reset" data-reset="spear">⚔️ 槍リセット</button>
   </div>
 <div class="troop-bar">
     <button class="troop troop-shield active" data-troop="shield">
@@ -188,29 +260,6 @@ h2,h3{margin-top:0}
   </div>
 </div>
 
-<div id="nodeEditor" class="node-editor">
-  <div class="editor-header">
-    <h3 id="editorTitle">研究設定</h3>
-    <button id="editorCloseX" class="close-x">✕</button>
-  </div>
-  <div class="editor-row">
-    <div class="lv-block current-block">
-      <label>📍 現在Lv</label>
-      <select id="editorCurrent"></select>
-      <button id="editorMaxCurrent" class="btn-current">✓ カンスト済み</button>
-    </div>
-    <div class="lv-block target-block">
-      <label>🎯 目標Lv</label>
-      <select id="editorTarget"></select>
-      <button id="editorMaxTarget" class="btn-target">↑ Lv MAX</button>
-    </div>
-  </div>
-  <div class="editor-actions">
-    <button id="editorCalc">📊 計算する</button>
-    <button id="editorClose">閉じる</button>
-  </div>
-</div>
-
   <div class="total-box" style="margin-top:8px">
     <h3>目標LVまでの消費アイテム数</h3>
     <div class="info-list">
@@ -218,6 +267,7 @@ h2,h3{margin-top:0}
   <div class="info-item">➕ 合計行で盾・弓・槍の全合算を確認できます</div>
 </div>
     <div id="totalResult"></div>
+    <button class="btn-export" id="btnExport">📋 設定内容をテキスト出力</button>
   </div>
 
 </section>
@@ -242,6 +292,8 @@ function saveState(){
     troop: troop,
     goal: goal,
     resultTroopCount: resultTroopCount,
+    stock: getStock(),
+    lang: currentLang,
     savedAt: new Date().toISOString()
   };
   localStorage.setItem(getSaveKey(), JSON.stringify(data));
@@ -267,6 +319,13 @@ function loadState(){
     if(data.goal) goal = data.goal;
     if(data.resultTroopCount) resultTroopCount = data.resultTroopCount;
     if(data.troop) troop = data.troop;
+    if(data.stock){
+      const s = data.stock;
+      if(document.getElementById("stock-refined")) document.getElementById("stock-refined").value = s.refined || 0;
+      if(document.getElementById("stock-particle")) document.getElementById("stock-particle").value = s.particle || 0;
+      if(document.getElementById("stock-steel"))   document.getElementById("stock-steel").value   = s.steel   || 0;
+    }
+    if(data.lang) setLang(data.lang);
     return true;
   } catch(e){ return false; }
 }
@@ -331,6 +390,133 @@ function applyLoadedState(){
   renderTroopProgress();
 }
 
+// =========================================================
+// 手持ち素材
+// =========================================================
+function getStock(){
+  return {
+    refined:  Number(document.getElementById("stock-refined")?.value)  || 0,
+    particle: Number(document.getElementById("stock-particle")?.value) || 0,
+    steel:    Number(document.getElementById("stock-steel")?.value)    || 0,
+  };
+}
+
+// 手持ち入力変更時に再描画
+["stock-refined","stock-particle","stock-steel"].forEach(id=>{
+  document.getElementById(id)?.addEventListener("input", ()=>{
+    renderGoalResult();
+    renderTotalResult();
+    saveState();
+  });
+});
+
+// =========================================================
+// 多言語
+// =========================================================
+let currentLang = "ja";
+const I18N = {
+  ja: {
+    refined:"精錬火晶", particle:"火晶微粒子", steel:"鋼材", time:"⏱研究時間",
+    shortage:"不足", surplus:"充足", shield:"盾", bow:"弓", spear:"槍", total:"合計",
+    current:"📍 現在Lv", target:"🎯 目標Lv", maxed:"✓ カンスト済み", reset:"↩ リセット", lvmax:"↑ Lv MAX",
+    calc:"📊 計算する", close:"閉じる",
+  },
+  en: {
+    refined:"Refined", particle:"Particle", steel:"Steel", time:"⏱Time",
+    shortage:"Shortage", surplus:"Enough", shield:"Shield", bow:"Bow", spear:"Spear", total:"Total",
+    current:"📍 Current Lv", target:"🎯 Target Lv", maxed:"✓ Maxed", reset:"↩ Reset", lvmax:"↑ Max Lv",
+    calc:"📊 Calculate", close:"Close",
+  }
+};
+
+function t(key){ return I18N[currentLang][key] || key; }
+
+function setLang(lang){
+  currentLang = lang;
+  document.querySelectorAll(".lang-btn").forEach(b=>b.classList.toggle("active", b.dataset.lang===lang));
+  // エディターラベル更新
+  const cur = document.querySelector(".current-block label");
+  const tar = document.querySelector(".target-block label");
+  if(cur) cur.textContent = t("current");
+  if(tar) tar.textContent = t("target");
+  const calc = document.getElementById("editorCalc");
+  const cl   = document.getElementById("editorClose");
+  if(calc) calc.textContent = t("calc");
+  if(cl)   cl.textContent   = t("close");
+  renderGoalResult();
+  renderTotalResult();
+}
+
+document.querySelectorAll(".lang-btn").forEach(b=>b.addEventListener("click",()=>{
+  setLang(b.dataset.lang);
+  saveState();
+}));
+
+// =========================================================
+// 兵種リセット
+// =========================================================
+document.querySelectorAll(".btn-troop-reset").forEach(b=>b.addEventListener("click",()=>{
+  const t = b.dataset.reset;
+  if(!confirm((t==="shield"?"盾":t==="bow"?"弓":"槍") + "兵の設定をリセットしますか？")) return;
+  Object.keys(nodeName).forEach(k=>{
+    state[t][k].current = 0;
+    state[t][k].target  = 0;
+  });
+  renderTotalResult();
+  renderMarkers();
+  saveState();
+}));
+
+// =========================================================
+// エクスポート
+// =========================================================
+document.getElementById("btnExport")?.addEventListener("click", ()=>{
+  const lines = ["1648 T12 Planner - 設定エクスポート", "=" .repeat(30)];
+  if(currentUser) lines.push("ユーザー: " + currentUser);
+  lines.push("出力日時: " + new Date().toLocaleString("ja-JP"));
+  lines.push("");
+
+  ["shield","bow","spear"].forEach(t=>{
+    const tName = {shield:"🛡 盾兵", bow:"🏹 弓兵", spear:"⚔️ 槍兵"}[t];
+    lines.push(tName);
+    const r = shortageForTroop(t);
+    lines.push("  精錬火晶: " + fmt(r.refined));
+    lines.push("  火晶微粒子: " + fmt(r.particle));
+    lines.push("  鋼材: " + fmt(r.steel));
+    if(r.time > 0) lines.push("  研究時間: " + fmtTime(r.time));
+    lines.push("");
+  });
+
+  const total = {refined:0, particle:0, steel:0, time:0};
+  ["shield","bow","spear"].forEach(t=>addCost(total, shortageForTroop(t)));
+  lines.push("【合計】");
+  const stock = getStock();
+  ["refined","particle","steel"].forEach(k=>{
+    const need = total[k];
+    const have = stock[k] || 0;
+    const diff = need - have;
+    lines.push("  " + {refined:"精錬火晶",particle:"火晶微粒子",steel:"鋼材"}[k] +
+      ": 必要 " + fmt(need) + " / 手持ち " + fmt(have) +
+      " → " + (diff > 0 ? "不足 " + fmt(diff) : "充足 +" + fmt(-diff)));
+  });
+  if(total.time > 0) lines.push("  研究時間合計: " + fmtTime(total.time));
+
+  const text = lines.join("\n");
+  // クリップボードにコピー
+  navigator.clipboard.writeText(text).then(()=>{
+    alert("クリップボードにコピーしました！");
+  }).catch(()=>{
+    // fallback: テキストエリアで表示
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    alert("クリップボードにコピーしました！");
+  });
+});
+
 const ICONS = {
   refined: "refined.png",
   particle: "particle.png",
@@ -364,15 +550,32 @@ const GOAL_COSTS = {
 let resultTroopCount = 1;
 
 
+function materialCardWithStock(key, label, need, have){
+  const diff = need - have;
+  const diffText = diff > 0
+    ? `<span class="shortage">-${fmt(diff)}</span>`
+    : `<span class="surplus">+${fmt(-diff)}</span>`;
+  const showDiff = have > 0;
+  return `<div class="material-card">
+    <img class="material-icon" src="${ICONS[key]}" alt="${label}">
+    <div style="flex:1;min-width:0">
+      <div class="label">${label}</div>
+      <div class="value">${fmt(need)}</div>
+      ${showDiff ? `<div style="font-size:11px;margin-top:2px">${t("shortage")}：${diffText}</div>` : ""}
+    </div>
+  </div>`;
+}
+
 function renderGoalResult(){
   const c = GOAL_COSTS[goal];
   const count = resultTroopCount;
+  const stock = getStock();
   document.getElementById("goalResult").innerHTML = `
     <div class="material-grid">
-      ${materialCard("refined", "精錬火晶", c.refined * count)}
-      ${materialCard("particle", "火晶微粒子", c.particle * count)}
-      ${materialCard("steel", "鋼材", c.steel * count)}
-      ${c.time ? `<div class="material-card time-card"><div><div class="label">⏱ 研究時間</div><div class="value" style="font-size:16px">${fmtTime(c.time * count)}</div></div></div>` : ""}
+      ${materialCardWithStock("refined",  t("refined"),  c.refined  * count, stock.refined)}
+      ${materialCardWithStock("particle", t("particle"), c.particle * count, stock.particle)}
+      ${materialCardWithStock("steel",    t("steel"),    c.steel    * count, stock.steel)}
+      ${c.time ? `<div class="material-card time-card"><div><div class="label">${t("time")}</div><div class="value" style="font-size:16px">${fmtTime(c.time * count)}</div></div></div>` : ""}
     </div>
   `;
 }
@@ -510,28 +713,46 @@ function shortageForTroop(t){
 }
 
 function renderTotalResult(){
-  const results = ["shield","bow","spear"].map(t => shortageForTroop(t));
+  const results = ["shield","bow","spear"].map(tr => shortageForTroop(tr));
   const total = {refined:0, particle:0, steel:0, time:0};
   results.forEach(r => addCost(total, r));
+  const stock = getStock();
 
   // 全兵種の時間が0なら時間列を非表示
   const showTime = results.some(r => r.time > 0) || total.time > 0;
 
-  const rows = ["shield","bow","spear"].map((t,i)=>{
+  // 兵種名多言語対応
+  const tn = {shield: t("shield"), bow: t("bow"), spear: t("spear")};
+
+  const rows = ["shield","bow","spear"].map((tr,i)=>{
     const r = results[i];
+    // 警告：目標Lv < 現在Lv のノードがあるか
+    const hasWarn = Object.keys(nodeName).some(k =>
+      state[tr][k].target > 0 && state[tr][k].target < state[tr][k].current
+    );
+    const warnBadge = hasWarn ? `<span class="warn-badge">⚠</span>` : "";
     const timeCell = showTime ? `<td>${r.time > 0 ? fmtTime(r.time) : "<span style='color:#475569'>ー</span>"}</td>` : "";
-    return `<tr><td>${troopName[t]}</td><td>${fmt(r.refined)}</td><td>${fmt(r.particle)}</td><td>${fmt(r.steel)}</td>${timeCell}</tr>`;
+    return `<tr><td>${tn[tr]}${warnBadge}</td><td>${fmt(r.refined)}</td><td>${fmt(r.particle)}</td><td>${fmt(r.steel)}</td>${timeCell}</tr>`;
   }).join("");
 
-  const timeHead  = showTime ? `<th>⏱時間</th>` : "";
-  const timeFoot  = showTime ? `<td>${fmtTime(total.time)}</td>` : "";
+  // 合計行：手持ち引いた不足数
+  function diffCell(need, have){
+    if(have <= 0) return fmt(need);
+    const diff = need - have;
+    return diff > 0
+      ? `${fmt(need)}<br><span class="shortage" style="font-size:10px">-${fmt(diff)}</span>`
+      : `${fmt(need)}<br><span class="surplus" style="font-size:10px">+${fmt(-diff)}</span>`;
+  }
+
+  const timeHead = showTime ? `<th>⏱時間</th>` : "";
+  const timeFoot = showTime ? `<td>${fmtTime(total.time)}</td>` : "";
 
   document.getElementById("totalResult").innerHTML = `
     <table class="result-table">
-      <thead><tr><th>対象</th><th><img src="refined.png" class="th-icon">精錬</th><th><img src="particle.png" class="th-icon">微粒子</th><th><img src="steel.png" class="th-icon">鋼材</th>${timeHead}</tr></thead>
+      <thead><tr><th>対象</th><th><img src="refined.png" class="th-icon">${t("refined")}</th><th><img src="particle.png" class="th-icon">${t("particle")}</th><th><img src="steel.png" class="th-icon">${t("steel")}</th>${timeHead}</tr></thead>
       <tbody>
         ${rows}
-        <tr style="font-weight:900;color:#86efac"><td>合計</td><td>${fmt(total.refined)}</td><td>${fmt(total.particle)}</td><td>${fmt(total.steel)}</td>${timeFoot}</tr>
+        <tr style="font-weight:900;color:#86efac"><td>${t("total")}</td><td>${diffCell(total.refined,stock.refined)}</td><td>${diffCell(total.particle,stock.particle)}</td><td>${diffCell(total.steel,stock.steel)}</td>${timeFoot}</tr>
       </tbody>
     </table>
   `;
@@ -829,7 +1050,8 @@ function renderMarkers(){
     const displaySize = Math.max(32, p.size * scale);
     m.style.width = displaySize + "px";
     m.style.height = displaySize + "px";
-    m.addEventListener("click",()=>{
+    m.addEventListener("click", e=>{
+      e.stopPropagation();
       if(selected === k && document.getElementById("nodeEditor").classList.contains("open")){
         selected = "";
         closeEditor();
@@ -838,7 +1060,7 @@ function renderMarkers(){
       }
       selected = k;
       renderMarkers();
-      focusRow(k);
+      focusRow(k, m);
     });
     wrap.appendChild(m);
   });
@@ -870,10 +1092,10 @@ function renderTroopProgress(){
   });
 }
 
-function focusRow(k){
+function focusRow(k, triggerEl){
   selected = k;
   renderMarkers();
-  openEditor(k);
+  openEditor(k, triggerEl);
 }
 
 
@@ -885,9 +1107,18 @@ function makeEditorOptions(max, value){
   return s;
 }
 
-function openEditor(k){
+function openEditor(k, triggerEl){
   const editor = document.getElementById("nodeEditor");
   document.getElementById("editorTitle").textContent = nodeName[k];
+  // サマリー行
+  const cur_lv = state[troop][k].current;
+  const tar_lv = state[troop][k].target;
+  const summaryEl = document.getElementById("editorSummary");
+  if(summaryEl){
+    const warn = tar_lv > 0 && tar_lv < cur_lv;
+    summaryEl.innerHTML = `現在Lv <strong>${cur_lv}</strong> → 目標Lv <strong>${tar_lv}</strong>`
+      + (warn ? ` <span class="warn-text">⚠ 目標が現在より低い</span>` : "");
+  }
   const cur = document.getElementById("editorCurrent");
   const tar = document.getElementById("editorTarget");
   cur.innerHTML = makeEditorOptions(maxLv[k], state[troop][k].current);
@@ -922,11 +1153,40 @@ function openEditor(k){
     openEditor(k);
     renderTotalResult();
   };
+  // ポップアップ位置計算
   editor.classList.add("open");
+  document.getElementById("editorOverlay").classList.add("open");
+
+  // triggerElがあれば位置を計算、なければ画面中央
+  if(triggerEl){
+    const rect = triggerEl.getBoundingClientRect();
+    const ew = editor.offsetWidth || 300;
+    const eh = editor.offsetHeight || 200;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // マーカーの下に出す、はみ出す場合は上
+    let top = rect.bottom + 8;
+    if(top + eh > vh - 8) top = rect.top - eh - 8;
+    if(top < 8) top = 8;
+
+    // 横はマーカー中央、はみ出し補正
+    let left = rect.left + rect.width/2 - ew/2;
+    if(left + ew > vw - 8) left = vw - ew - 8;
+    if(left < 8) left = 8;
+
+    editor.style.top  = top + "px";
+    editor.style.left = left + "px";
+  } else {
+    // 画面中央
+    editor.style.top  = Math.max(8, (window.innerHeight - (editor.offsetHeight||200))/2) + "px";
+    editor.style.left = Math.max(8, (window.innerWidth  - (editor.offsetWidth ||300))/2) + "px";
+  }
 }
 
 function closeEditor(){
   document.getElementById("nodeEditor").classList.remove("open");
+  document.getElementById("editorOverlay").classList.remove("open");
 }
 
 function calculateAndScroll(){
@@ -968,6 +1228,7 @@ document.querySelectorAll(".count-tab").forEach(b=>b.addEventListener("click",()
 document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>switchTroop(b.dataset.troop)));
 document.getElementById("editorClose").addEventListener("click", closeEditor);
 document.getElementById("editorCloseX").addEventListener("click", ()=>{ selected=""; closeEditor(); renderMarkers(); });
+document.getElementById("editorOverlay").addEventListener("click", ()=>{ selected=""; closeEditor(); renderMarkers(); });
 document.getElementById("editorCalc").addEventListener("click", calculateAndScroll);
 setupPresetButtons();
 initQuickSelect();
