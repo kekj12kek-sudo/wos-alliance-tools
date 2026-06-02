@@ -212,6 +212,7 @@ h2,h3{margin-top:0}
         <div class="stock-card"><img class="material-icon" src="particle.png"><div style="flex:1"><div class="label">火晶微粒子</div><input id="stock-particle" type="number" min="0" placeholder="0"></div></div>
         <div class="stock-card time-card"><img class="material-icon" src="steel.png"><div style="flex:1"><div class="label">鋼材</div><input id="stock-steel" type="number" min="0" placeholder="0"></div></div>
       </div>
+      <button id="btnStockReset" style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid #7c4a00;background:#2a1400;color:#c9a87c;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation">↩ 手持ち素材をリセット</button>
     </div>
   </div>
   <div class="total-box" style="margin-bottom:12px">
@@ -466,6 +467,17 @@ document.querySelectorAll(".btn-troop-reset").forEach(b=>b.addEventListener("cli
   renderMarkers();
   saveState();
 }));
+
+// 手持ち素材リセット
+document.getElementById("btnStockReset")?.addEventListener("click", ()=>{
+  ["stock-refined","stock-particle","stock-steel"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = 0;
+  });
+  renderGoalResult();
+  renderTotalResult();
+  saveState();
+});
 
 // =========================================================
 // エクスポート
