@@ -19,6 +19,16 @@ button.active{background:#b45309;border-color:#f59e0b}.goal.active{background:#1
 .side{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px}
 h2,h3{margin-top:0}
 .info{color:#cbd5e1;line-height:1.6;font-size:14px}
+.goal-result{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:12px}
+.goal-result h3{margin:0 0 8px;font-size:16px}
+.count-tabs{display:flex;gap:8px;margin:8px 0 12px}
+.count-tab{padding:8px 12px;border-radius:10px;border:1px solid #475569;background:#1f2937;color:#fff;font-weight:800;cursor:pointer}
+.count-tab.active{background:#166534;border-color:#22c55e}
+.material-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.material-card{background:#111827;border:1px solid #334155;border-radius:10px;padding:10px}
+.material-card .label{color:#94a3b8;font-size:12px}
+.material-card .value{font-size:20px;font-weight:900;margin-top:4px}
+@media(max-width:700px){.material-grid{grid-template-columns:1fr}}
 .level-row{display:grid;grid-template-columns:1fr 90px 90px;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #1f2937}
 .level-row.active{background:#1e293b;outline:2px solid #f59e0b;border-radius:10px}
 .level-row label{font-weight:700;font-size:13px}
@@ -39,10 +49,22 @@ h2,h3{margin-top:0}
 </header>
 
 <div class="main">
-<section class="stage">
+<section>
+  <div class="goal-result">
+    <h3>大枠目標の必要素材</h3>
+    <div class="info">基本は1兵種分です。タブで2兵種・3兵種の合計へ切替できます。</div>
+    <div class="count-tabs">
+      <button class="count-tab active" data-count="1">1兵種</button>
+      <button class="count-tab" data-count="2">2兵種</button>
+      <button class="count-tab" data-count="3">3兵種</button>
+    </div>
+    <div id="goalResult"></div>
+  </div>
+  <div class="stage">
   <div id="treeWrap">
     <img id="treeImage" src="S__123273220_0.jpg" alt="T12研究ツリー">
   </div>
+</div>
 </section>
 
 <aside class="side">
@@ -54,6 +76,32 @@ h2,h3{margin-top:0}
 </div>
 
 <script>
+
+const GOAL_COSTS = {
+  unlock: { label:"T12解放まで", steel:1620000, refined:440, particle:3080 },
+  skill:  { label:"スキル解放まで", steel:4263000, refined:898, particle:6235 },
+  max:    { label:"カンストまで", steel:17774250, refined:3895, particle:67944 }
+};
+let resultTroopCount = 1;
+
+function fmt(n){
+  if(n >= 100000000) return (n/100000000).toFixed(2).replace(/\.00$/,"") + "億";
+  if(n >= 1000000) return (n/1000000).toFixed(2).replace(/\.00$/,"") + "M";
+  return Math.round(n).toLocaleString("ja-JP");
+}
+
+function renderGoalResult(){
+  const c = GOAL_COSTS[goal];
+  const count = resultTroopCount;
+  document.getElementById("goalResult").innerHTML = `
+    <div class="material-grid">
+      <div class="material-card"><div class="label">鋼材</div><div class="value">${fmt(c.steel * count)}</div></div>
+      <div class="material-card"><div class="label">精錬火晶</div><div class="value">${fmt(c.refined * count)}</div></div>
+      <div class="material-card"><div class="label">火晶微粒子</div><div class="value">${fmt(c.particle * count)}</div></div>
+    </div>
+  `;
+}
+
 const layouts = {"shield": {"unlock": {"x": 50.11, "y": 6.99, "size": 160}, "ability1_atk": {"x": 11.56, "y": 23.97, "size": 139}, "ability1_def": {"x": 36.89, "y": 23.91, "size": 137}, "ability1_leth": {"x": 62.44, "y": 23.91, "size": 139}, "ability1_hp": {"x": 88.33, "y": 23.91, "size": 142}, "skill": {"x": 50, "y": 41.2, "size": 160}, "ability2_atk": {"x": 11.89, "y": 58.62, "size": 139}, "ability2_def": {"x": 37.11, "y": 58.56, "size": 136}, "ability2_leth": {"x": 62.56, "y": 58.68, "size": 139}, "ability2_hp": {"x": 88.22, "y": 58.56, "size": 141}, "capacity": {"x": 50.11, "y": 76.6, "size": 134}, "ability3_atk": {"x": 11.56, "y": 93.46, "size": 139}, "ability3_def": {"x": 37.11, "y": 93.27, "size": 137}, "ability3_leth": {"x": 62.67, "y": 93.46, "size": 142}, "ability3_hp": {"x": 88.33, "y": 93.46, "size": 142}}, "bow": {"unlock": {"x": 50.44, "y": 10.11, "size": 158}, "ability1_atk": {"x": 12.11, "y": 25.55, "size": 144}, "ability1_def": {"x": 37.56, "y": 25.42, "size": 147}, "ability1_leth": {"x": 62.89, "y": 25.42, "size": 143}, "ability1_hp": {"x": 88.33, "y": 25.61, "size": 149}, "skill": {"x": 50.44, "y": 42.54, "size": 158}, "ability2_atk": {"x": 12.22, "y": 59.09, "size": 141}, "ability2_def": {"x": 37.44, "y": 59.16, "size": 143}, "ability2_leth": {"x": 62.89, "y": 59.16, "size": 141}, "ability2_hp": {"x": 88, "y": 59.03, "size": 142}, "capacity": {"x": 50.22, "y": 76.08, "size": 141}, "ability3_atk": {"x": 12.11, "y": 92.45, "size": 141}, "ability3_def": {"x": 37.56, "y": 92.52, "size": 141}, "ability3_leth": {"x": 62.89, "y": 92.45, "size": 141}, "ability3_hp": {"x": 88.11, "y": 92.52, "size": 142}}, "spear": {"unlock": {"x": 49.89, "y": 10.13, "size": 160}, "ability1_atk": {"x": 12.11, "y": 26.58, "size": 143}, "ability1_def": {"x": 37.11, "y": 26.51, "size": 143}, "ability1_leth": {"x": 61.89, "y": 26.51, "size": 144}, "ability1_hp": {"x": 87.67, "y": 26.58, "size": 143}, "skill": {"x": 49.78, "y": 44.65, "size": 160}, "ability2_atk": {"x": 12.11, "y": 61.22, "size": 144}, "ability2_def": {"x": 37.11, "y": 61.16, "size": 144}, "ability2_leth": {"x": 61.56, "y": 61.28, "size": 144}, "ability2_hp": {"x": 87.44, "y": 61.28, "size": 144}, "capacity": {"x": 49.56, "y": 78.42, "size": 144}, "ability3_atk": {"x": 12.11, "y": 93.24, "size": 144}, "ability3_def": {"x": 37, "y": 93.18, "size": 144}, "ability3_leth": {"x": 61.78, "y": 93.18, "size": 144}, "ability3_hp": {"x": 87.44, "y": 93.05, "size": 144}}};
 const imageMap = {
   shield:"S__123273220_0.jpg",
@@ -217,13 +265,21 @@ document.querySelectorAll(".goal").forEach(b=>b.addEventListener("click",()=>{
   goal = b.dataset.goal;
   document.querySelectorAll(".goal").forEach(x=>x.classList.toggle("active", x.dataset.goal===goal));
   applyGoalToTroop();
+  renderGoalResult();
   renderTable();
   focusRow(selected);
+}));
+
+document.querySelectorAll(".count-tab").forEach(b=>b.addEventListener("click",()=>{
+  resultTroopCount = Number(b.dataset.count);
+  document.querySelectorAll(".count-tab").forEach(x=>x.classList.toggle("active", x.dataset.count===String(resultTroopCount)));
+  renderGoalResult();
 }));
 
 document.querySelectorAll(".troop").forEach(b=>b.addEventListener("click",()=>switchTroop(b.dataset.troop)));
 
 applyGoalToTroop();
+renderGoalResult();
 renderTable();
 renderMarkers();
 focusRow(selected);
