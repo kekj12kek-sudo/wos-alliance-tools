@@ -609,6 +609,7 @@ function renderMarkers(){
   const layout = layouts[troop];
   Object.keys(nodeName).forEach(k=>{
     const p = layout[k];
+    if(!p){ console.warn("renderMarkers: layout missing for key="+k+" troop="+troop); return; }
     const m = document.createElement("button");
     m.className = "marker" + (k===selected ? " selected" : "");
     m.dataset.key = k;
@@ -736,15 +737,4 @@ document.getElementById("treeImage").addEventListener("load", renderMarkers);
 </body>
 </html>
 
-<!-- fixed_v2 marker restore -->
-<style>
-.quick-btn{
-  background:rgba(22,101,52,.86) !important;
-  border-color:#22c55e !important;
-  cursor:pointer !important;
-}
-.quick-btn.selected{
-  background:rgba(245,158,11,.88) !important;
-  border-color:#fde68a !important;
-}
-</style>
+
