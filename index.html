@@ -637,25 +637,44 @@ function fmt(n){
 
 function normalizePrereqFor(type){
   const s = state[troop];
+  const ab2keys = ["ability2_atk","ability2_def","ability2_leth","ability2_hp"];
+  const ab3keys = ["ability3_atk","ability3_def","ability3_leth","ability3_hp"];
 
-  // スキル以上 → 解放 + 能力Ⅰ4種MAX
-  if(s.skill[type] > 0 || hasAny(type, ["ability2_atk","ability2_def","ability2_leth","ability2_hp","capacity","ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
+  // 能力Ⅱ以上 → 解放 + 能力Ⅰ4種MAX + スキルMAX
+  if(hasAny(type, [...ab2keys,"capacity",...ab3keys])){
+    s.unlock[type] = Math.max(s.unlock[type], 1);
+    ["ability1_atk","ability1_def","ability1_leth","ability1_hp"].forEach(k => s[k][type] = Math.max(s[k][type], 20));
+    s.skill[type] = Math.max(s.skill[type], 3);
+  }
+
+  // スキルのみ → 解放 + 能力Ⅰ4種MAX
+  if(s.skill[type] > 0){
     s.unlock[type] = Math.max(s.unlock[type], 1);
     ["ability1_atk","ability1_def","ability1_leth","ability1_hp"].forEach(k => s[k][type] = Math.max(s[k][type], 20));
   }
 
-  // 能力Ⅱ以上 → スキルMAX
-  if(hasAny(type, ["ability2_atk","ability2_def","ability2_leth","ability2_hp","capacity","ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
-    s.skill[type] = Math.max(s.skill[type], 3);
+  // 容量の上限は能力Ⅱに連動
+  // 能力Ⅱの最大値から容量の上限を決定
+  const ab2max = Math.max(...ab2keys.map(k => s[k][type] || 0));
+  if(s.capacity[type] > 0){
+    // 容量Lv1-5 → 能力Ⅱ最低Lv30必要
+    // 容量Lv6-10 → 能力Ⅱ最低Lv40必要
+    // 容量Lv11-15 → 能力Ⅱ最低Lv50必要
+    const capLv = s.capacity[type];
+    const requiredAb2 = capLv >= 11 ? 50 : capLv >= 6 ? 40 : 30;
+    ab2keys.forEach(k => s[k][type] = Math.max(s[k][type], requiredAb2));
   }
 
-  // 容量以上 → 能力Ⅱ4種MAX
-  if(s.capacity[type] > 0 || hasAny(type, ["ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
-    ["ability2_atk","ability2_def","ability2_leth","ability2_hp"].forEach(k => s[k][type] = Math.max(s[k][type], 50));
+  // 容量の上限を能力Ⅱに合わせてキャップ
+  if(s.capacity[type] > 0){
+    const ab2cur = Math.max(...ab2keys.map(k => s[k][type] || 0));
+    const capMax = ab2cur >= 50 ? 15 : ab2cur >= 40 ? 10 : ab2cur >= 30 ? 5 : 0;
+    s.capacity[type] = Math.min(s.capacity[type], capMax);
   }
 
-  // 能力Ⅲ → 容量MAX
-  if(hasAny(type, ["ability3_atk","ability3_def","ability3_leth","ability3_hp"])){
+  // 能力Ⅲ → 能力ⅡカンストLv50 + 容量カンストLv15
+  if(hasAny(type, ab3keys)){
+    ab2keys.forEach(k => s[k][type] = Math.max(s[k][type], 50));
     s.capacity[type] = Math.max(s.capacity[type], 15);
   }
 }
